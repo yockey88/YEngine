@@ -1,0 +1,12 @@
+.vs/
+.vscode/
+bin*/
+logs/
+
+*.user
+*.DS_STORE
+*.xcworkspace/
+*.xcodeproj/
+*.vcxproj*
+*.sln
+*Makefile
