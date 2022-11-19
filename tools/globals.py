@@ -4,8 +4,8 @@ VPATCH = 1
 
 
 import sys , platform
-
-for x in platform.name():
+PLATFORM = sys.platform
+for x in platform.uname():
     if "microsoft" in x.lower():
         PLATFORM = "windows"
         break
