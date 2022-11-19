@@ -9,3 +9,4 @@ if globals.IsLinux():
 
 if globals.IsMac():
     subprocess.call(["premake/premake5" , "gmake2"])
+    subprocess.call(["premake/premake5" , "xcode4"])
