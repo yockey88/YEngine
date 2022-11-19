@@ -1,7 +1,14 @@
+PROJECT_NAME = "MachineY"
+ENGINE_NAME = "Engine"
+
+TOOLS_DIR = "tools"
+
 VMAJOR = 1
 VMINOR = 0
 VPATCH = 1
 
+CONFIG = "debug"
+CONFIGEXE = "Debug"
 
 import sys , platform
 PLATFORM = sys.platform
