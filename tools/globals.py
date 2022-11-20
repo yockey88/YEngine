@@ -1,5 +1,6 @@
-PROJECT_NAME = "MachineY"
+MAIN_NAME = "MachineY"
 ENGINE_NAME = "Engine"
+PROJECT_NAME = "MachyDev"
 
 TOOLS_DIR = "tools"
 
