@@ -1,9 +1,16 @@
 #include "machy.hpp"
 #include "Core/window.hpp"
+#include "glad/glad.h"
 #include <iostream>
 
 namespace machy::core {
 
+	/* clear()
+		@params--> nothing
+		@return--> void
+
+		-> clears window to custom color (black) 
+	*/
 	void Window::clear() {
 		SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 		SDL_RenderClear(renderer);
@@ -50,20 +57,26 @@ namespace machy::core {
 
 		window = SDL_CreateWindow(name.c_str() , SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, scrnW, scrnH, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL);
 		if (window == nullptr) {
-			ERR("WINDOW CREATION FAILURE");
-			ERR(SDL_GetError());
+			MACHY_FATAL("RENDERER CREATION FAILURE <SDL ERROR>-> {}" , SDL_GetError());
 			return false;
 		}
 
-		renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-		if (renderer == nullptr) {
-			ERR("RENDERER CREATION FAILURE");
-			ERR(SDL_GetError());
-			return false;
-		}
+#ifdef NACHY_PLATFORM_MAC
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS , SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+#endif
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK , SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION , 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION , 1);
+		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER , 1);
 
-		if (!gui.create(window , renderer , gProps))
+		SDL_SetWindowMinimumSize(window , 200 , 200);
+
+		glContext = SDL_GL_CreateContext(window);
+		MACHY_ASSERT((glContext != nullptr) , "OpenGl context is null");
+		if (glContext == nullptr)
 			return false;
+
+		gladLoadGLLoader(SDL_GL_GetProcAddress);
 			
 		open = true;
 
@@ -71,8 +84,6 @@ namespace machy::core {
 	}
 
 	void Window::beginRender() {
-		clear();
-		gui.beginRender(window);
 
 		return;
 	}
@@ -82,13 +93,6 @@ namespace machy::core {
 		SDL_Event e;
 
 		while (SDL_PollEvent(&e)) {
-			gui.handleSDLEvent(e);
-			if (gui.wantCaptureMouse()) 
-				input::mouse::UpdatePos();
-			
-			if (gui.wantCaptureKeyboard())
-				input::keyboard::UpdateKeys();
-
 			handleEvents(e , ret);
 		}
 
@@ -96,21 +100,17 @@ namespace machy::core {
 	}
 
 	void Window::endRender() {
-		gui.endRender(renderer);
-
-		auto& scenes = MachY::Instance().getScenes();
-		scenes.render(renderer);
-
-		SDL_RenderPresent(renderer);
+		
+		SDL_GL_SwapWindow(window);
 
 		return;
 	}
 
 	void Window::shutdown() {
-		gui.shutdown();
 		
 		if (renderer != nullptr) SDL_DestroyRenderer(renderer);
 		if (window != nullptr) SDL_DestroyWindow(window);
+		SDL_Quit();
 
 		return;
 	}

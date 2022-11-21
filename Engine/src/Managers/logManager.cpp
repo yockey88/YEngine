@@ -1,72 +1,43 @@
 #include "Managers/logManager.hpp"
 
+#include <iostream>
 #include <ctime>
 #include <chrono>
 
 namespace machy {
 namespace managers {
 
-    void LogManager::out(const std::string& data , bool error) {
-        // auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        // char* now = ctime(&time);
-        // if (now[strlen(now) - 1] == '\n')
-        //     now[strlen(now) - 1] = '\0';
+    void LogManager::init() {
+        auto consoleSink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+        auto errSink = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
 
-        if (error) {
-            std::cout << "{!!!}>>> [" << data << "] <<< []" << std::endl; // " << now << "
-        } else {
-            std::cout << "[$$$]>>> [" << data << "] <<<[]" << std::endl; //" << now << "
-        }
+        consoleSink->set_pattern("[$$$] >>> [ %v ] <<< [%D %H:%M:%S.%e %Y] [%n <{thread}-> %t , {process}-> %P>]");
+        consoleSink->set_level(spdlog::level::trace);
 
-        return;
-    }
+        errSink->set_pattern("{!!! | <%l>} >>> { %v } <<< {%D %H:%M:%S.%e %Y} [%n <{thread}-> %t , {process}-> %P>]");
+        errSink->set_level(spdlog::level::warn);
 
-    void LogManager::file(const std::string& data , bool error) {
-        // auto time = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-        // char* now = ctime(&time);
-        // if (now[strlen(now) - 1] == '\n')
-        //     now[strlen(now) - 1] = '\0';
+        std::vector<spdlog::sink_ptr> sinks1 { consoleSink };
+        MainLogger = std::make_shared<spdlog::logger>(MACHY_DEFAULT_LOGGER_NAME , sinks1.begin() , sinks1.end());
+        MainLogger->set_level(spdlog::level::trace);
+        MainLogger->flush_on(spdlog::level::trace);
+        spdlog::register_logger(MainLogger);
 
-        if (error) {
-            errsink.open(errlog , std::ios::app);
-            errsink << "{!!!}>>> {" << data << "} <<<[]" << std::endl; //" << now << "
-            errsink.close();
-        } else {
-            mainsink.open(mainlog , std::ios::app);
-            mainsink << "[$$$]>>> [" << data << "] <<<[]" << std::endl; // " << now << "
-            mainsink.close();
-        }
+        std::vector<spdlog::sink_ptr> sinks2 { errSink };
+        ErrLogger = std::make_shared<spdlog::logger>(MACHY_ERROR_LOGGER_NAME , sinks2.begin() , sinks2.end());
+        ErrLogger->set_level(spdlog::level::warn);
+        ErrLogger->flush_on(spdlog::level::warn);
+        spdlog::register_logger(ErrLogger);
 
-        return;
-    }
-
-    void LogManager::log(const std::string& data) {
-        file(data , false);
-
-#ifdef MACHY_CONFIG_DEBUG
-        out(data , false);
-#endif
-
-        return;
-    }
-
-    void LogManager::error(const std::string& data) {
-        file(data , true);
-        out(data , true);
+        open = true;
 
         return;
     }
 
     void LogManager::shutdown() {
-        file("Shutting Down Log Manager" , false);
+        MACHY_TRACE("Closing Log");
 
-        file("Closing Main Sink" , false);
-        if (mainsink.is_open())
-            mainsink.close();
-
-        file("Closing Error Sink" , false);
-        if (errsink.is_open())
-            errsink.close();
+        spdlog::shutdown();
 
         return;
     }

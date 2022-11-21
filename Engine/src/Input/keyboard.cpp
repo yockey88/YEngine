@@ -12,7 +12,7 @@ namespace input {
 	void  keyboard::Initialize() {
 		std::fill(keys.begin(), keys.end(), false);
 		std::fill(keysLast.begin(), keysLast.end(), false);
-        MachY::Instance().Log("Keyboard Initialized");
+        MACHY_TRACE("Keyboard Initialized");
 	}
 
 	void  keyboard::UpdateKeys() {

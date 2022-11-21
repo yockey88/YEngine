@@ -1,20 +1,22 @@
 #include "machy.hpp"
+#include "dev.hpp"
 
 /* [GOALS]
-	-> Command Line Arguments / Engine Flags
 	-> save state load / serialization of program
 	-> Main Menu in main
 		- MachY [Core Machine | Admin??]
 		- GameY [Game Engine]
 		- ???? 
+	[FINISHED]
+	Command Line Arguments / Engine Flags $$$
 */
 
-int main(int argc , char* argv[]) {
-	machy::App* tests = new machy::Dev;
-	tests->InitArgs(argc , argv);
+int main() {
+	machy::App* MachyDevApp = new machy::Dev;
+	MachyDevApp->InitNoArgs();
 	
 	auto& machine = machy::MachY::Instance();
-	machine.run(tests);
+	machine.run(MachyDevApp);
 	
 	return 0;
 }

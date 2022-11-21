@@ -10,12 +10,21 @@ workspace "MachineY"
 tdir = "bin/%{cfg.buildcfg}/%{prj.name}"
 odir = "bin-obj/%{cfg.buildcfg}/%{prj.name}"
 
+-- IDK what these are for but here they are
+mainpaths = {}
+mainpaths["MachyDev"] = "C:\\Yock/Projects/GitHub/YEngine/MachyDev"
+mainpaths["Engine"] = "C:\\Yock/Projects/GitHub/YEngine/Engine"
+
 -- External Dependencies
 externals = {}
 externals["sdl2"] = "C:\\Yock/Extern/SDL2-2.24.2"
 externals["imgui"] = "C:\\Yock/Extern/imgui-1.89"
 externals["entt"] = "C:\\Yock/Extern/entt-3.11.0"
 externals["spdlog"] = "C:\\Yock/Extern/spdlog-1.11.0"
+externals["glad"] = "external/glad"
+
+-- Glad before all
+include "external/glad"
 
 project "MachyDev"
     location "MachyDev"
@@ -33,19 +42,20 @@ project "MachyDev"
         "%{prj.name}/src/**.cpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
-        "%{externals.imgui}/misc/cpp/*.h",
-        "%{externals.imgui}/misc/cpp/*.cpp"
+        "%{externals.sdl2}/include",
+        "%{externals.spdlog}/include",
+        "%{externals.glad}/include"
     }
 
     externalincludedirs {
-        "Engine/include",
-        "Engine/data",
+        "%{prj.name}",
+        "%{prj.name}/include",
+        "%{mainpaths.Engine}/include",
         "%{externals.sdl2}/include",
         "%{externals.imgui}",
-        "%{externals.imgui}/backends",
-        "%{externals.imgui}/misc/cpp",
-        "%{externals.entt}/single_include/entt",
-        "%{externals.spdlog}/include/spdlog"
+        "%{externals.entt}/single_include",
+        "%{externals.spdlog}/include",
+        "%{externals.glad}/include"
     }
 
     flags { "FatalWarnings" }
@@ -62,7 +72,8 @@ project "MachyDev"
         }
 
         links {
-            "SDL2"
+            "SDL2",
+            "glad"
         }
 
     filter { "system:macosx" , "configurations:*" }
@@ -74,10 +85,18 @@ project "MachyDev"
         defines {
             "MACHY_PLATFORM_MAC"
         }
+        links {
+            "SDL2.framework",
+            "glad"
+        }
 
     filter { "system:linux" , "configurations:*" }
         defines {
             "MACHY_PLATFORM_LINUX"
+        }
+        links {
+            "SDL2",
+            "glad"
         }
 
     filter "configurations:Debug"
@@ -110,21 +129,26 @@ project "Engine"
         "%{prj.name}/src/**.cpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
-        "%{externals.imgui}/misc/cpp/*.h",
-        "%{externals.imgui}/misc/cpp/*.cpp"
+        "%{externals.sdl2}/include",
+        "%{externals.spdlog}/include",
+        "%{externals.glad}/src",
+        "%{externals.glad}/include"
     }
 
     externalincludedirs {
         "%{prj.name}/include",
         "%{externals.sdl2}/include",
         "%{externals.imgui}",
-        "%{externals.imgui}/backends",
-        "%{externals.imgui}/misc/cpp",
-        "%{externals.entt}/single_include/entt",
-        "%{externals.spdlog}/include/spdlog"
+        "%{externals.entt}/single_include",
+        "%{externals.spdlog}/include",
+        "%{externals.glad}/include"
     }
 
     flags { "FatalWarnings" }
+
+    defines {
+        "GLFW_INCLUDE_NONE" -- Ensures glad doesnt include glfw
+    }
 
     filter { "system:windows" , "configurations:*" }
         systemversion "latest"
@@ -138,7 +162,8 @@ project "Engine"
         }
 
         links {
-            "SDL2"
+            "SDL2",
+            "glad"
         }
 
     filter { "system:macosx" , "configurations:*" }

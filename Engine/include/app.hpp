@@ -2,7 +2,7 @@
 #define APP_HPP
 
 #include "Parsers/cmndParser.hpp"
-#include <SDL.h>
+#include "SDL.h"
 #include <string>
 
 namespace machy {
@@ -21,17 +21,11 @@ namespace machy {
         WinData() : scrnH(0), scrnW(0) {}
     };
 
-    struct SceneData {
-        int gridDim , gridSize;
-
-        SceneData() : gridDim(0), gridSize(0) {}
-    };
-
     struct AppData {
         WinData winData;
         GuiData guiData;
-        SceneData sceneData;
         std::string name , version;
+        std::string loadPath , scenePath;
 
         AppData() : name("{BLANK}"), version("{0.0.0}") {}
     };
@@ -41,27 +35,11 @@ namespace machy {
             virtual ~App() {}
 
             virtual void InitArgs(const int& argc , char* argv[]) {}
+            virtual void InitNoArgs() {}
 
             virtual AppData* getData() { return nullptr; }
     };
-
-    class Dev : public App {
-        util::CmndParser flags;
-        AppData initData;
-
-        void checkFlags();
-        public:
-            Dev() {}
-            virtual ~Dev() override {}
-
-            virtual void InitArgs(const int& argc , char* argv[]) override;
-
-            virtual inline AppData* getData() override { return &initData; };
-    };
-
-    // template<class T>
-    // std::unique_ptr<T> CreateApp() {}
-
+    
 }
 
 #endif 

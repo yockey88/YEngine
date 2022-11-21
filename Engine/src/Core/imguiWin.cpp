@@ -28,16 +28,16 @@ namespace machy::core {
 		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 		if (!ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) {
-			ERR("ImGui Initialization for SDL2 Failed");
+			MACHY_FATAL("ImGui Initialization for SDL2 Failed");
 			return false;
 		}
 
 		if (!ImGui_ImplSDLRenderer_Init(renderer)) {
-			ERR("ImGui Initialization for SDL2 Renderer Failed");
+			MACHY_FATAL("ImGui Initialization for SDL2 Renderer Failed");
 			return false;
 		}
 
-		LOG("ImGui Initialization Complete");
+		MACHY_INFO("ImGui Initialization Complete");
 
 		return true;
 	}
@@ -89,18 +89,7 @@ namespace machy::core {
 	}
 
 	void Gui::structs() {
-		ImGui::Begin("[Scene Graph Debug]" , &showStructSettings , ImGuiWindowFlags_MenuBar);
-		if (ImGui::BeginMenuBar()) {
-			if (ImGui::BeginMenu("[TOOLS]")) {
-				if (ImGui::MenuItem("Print Graph Connections" , "Ctrl+M")) { 
-					auto& s = MachY::Instance().getScenes();
-					s.printActiveLog();
-				}
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
-		
+		ImGui::Begin("[]" , &showStructSettings , ImGuiWindowFlags_MenuBar);
 		
 		ImGui::End();
 

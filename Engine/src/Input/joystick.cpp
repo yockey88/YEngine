@@ -10,7 +10,7 @@ namespace input {
 	void joystick::OnJoystickConnected(SDL_ControllerDeviceEvent& e) {
 		int deviceIndex = e.which;
 		if (SDL_IsGameController(deviceIndex)) {
-            LOG("Game Controller Connected");
+            MACHY_TRACE("Game Controller Connected");
 			auto c = std::make_unique<Controller>();
 			c->gc = SDL_GameControllerOpen(deviceIndex);
 
@@ -23,9 +23,9 @@ namespace input {
 
 				int mapIndex = GetNextFreeIndex();
 				availableJoysticks[mapIndex] = std::move(c);
-                LOG("Game Controller Initialized");
+                MACHY_TRACE("Game Controller Initialized");
 			} else {
-				ERR("Error Initializing Game Controller Connection");
+				MACHY_TRACE("Error Initializing Game Controller Connection");
 			}
 		}
 	}
@@ -35,7 +35,7 @@ namespace input {
 		for (auto it = availableJoysticks.begin(); it != availableJoysticks.end(); it++) {
 			Controller* c = it->second.get();
 			if (c->joystickIndex == deviceIndex) {
-				LOG("Joystick Disconnected");
+				MACHY_TRACE("Joystick Disconnected");
 				SDL_GameControllerClose(c->gc);
 				availableJoysticks.erase(it);
 				break;
@@ -54,7 +54,7 @@ namespace input {
 	void joystick::UpdateGamePad() {
 		for (auto it = availableJoysticks.begin(); it != availableJoysticks.end(); it++) {
 			Controller* c = it->second.get();
-            if (c == nullptr) ERR("Game Controller Connection Corrupt");
+            if (c == nullptr) MACHY_ERROR("Game Controller Connection Corrupt");
 			if (c && c->gc) {
 				c->lastButtons = c->buttons;
 				c->lastAxes = c->axes;
@@ -77,7 +77,7 @@ namespace input {
 			return it->second->buttons[static_cast<int>(button)];
 		}
 
-		ERR("Joystick Not Available!");
+		MACHY_ERROR("Joystick Not Available!");
 		return false;
 	}
 
@@ -87,7 +87,7 @@ namespace input {
 			return it->second->buttons[static_cast<int>(button)] && !it->second->lastButtons[static_cast<int>(button)];
 		}
 
-		ERR("Joystick Not Available!");
+		MACHY_ERROR("Joystick Not Available!");
 		return false;
 	}
 
@@ -97,7 +97,7 @@ namespace input {
 			return !it->second->buttons[static_cast<int>(button)] && it->second->lastButtons[static_cast<int>(button)];
 		}
 
-		ERR("Joystick Not Available!");
+		MACHY_ERROR("Joystick Not Available!");
 		return false;
 	}
 
@@ -108,7 +108,7 @@ namespace input {
 			return abs(val) > deadzone ? val : 0.f;
 		}
 
-		ERR("Joystick Not Available!");
+		MACHY_ERROR("Joystick Not Available!");
 		return 0.f;
 	}
 

@@ -1,9 +1,10 @@
 #ifndef WINDOW_HPP
 #define WINDOW_HPP
 
-#include "imguiWin.hpp"
+using SDL_GLContext = void*;
 
-#include <SDL.h>
+#include "imguiWin.hpp"
+#include "SDL.h"
 #undef main
 
 namespace machy {
@@ -18,6 +19,7 @@ namespace core {
 	class Window {
 		SDL_Window* window;
 		SDL_Renderer* renderer;
+		SDL_GLContext glContext;
 
 		Gui gui;
 

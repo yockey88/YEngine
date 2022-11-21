@@ -17,7 +17,7 @@ namespace input {
     void mouse::Initialize() {
         std::fill(buttons.begin(), buttons.end(), false);
 		std::fill(buttonsLast.begin(), buttonsLast.end(), false);
-        MachY::Instance().Log("Mouse Initialized");
+        MACHY_TRACE("Mouse Initialized");
         return;
     }
 

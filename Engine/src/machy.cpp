@@ -1,4 +1,7 @@
 #include "machy.hpp"
+#include "log.hpp"
+#include "Graphics/mesh.hpp"
+#include "Graphics/shader.hpp"
 #include <iostream>
 #include <chrono>
 
@@ -41,11 +44,17 @@ namespace machy {
 	*/
 	void MachY::update() {
 		core::EventData eD = state->window.flushEvents();
-
 		if (eD.key < 0) {
 			running = false;
 			return;
 		}
+
+		/* 
+			Updates App with Window Events
+			Updates Managers with App Updates
+			
+			Prepares for Next Render Pass
+		*/
 
 		return;
 	}
@@ -64,7 +73,34 @@ namespace machy {
 	*/
 	void MachY::render() {
 
+		float vertices[] { -0.5f , -0.5f , 0.f , 
+							0.f  , 	0.5f , 0.f ,
+							0.5f , -0.5f , 0.f }
+
+		std::shared_ptr<graphics::Mesh> mesh(&vertices[0] , 3 , 3);
+		
+		const char* vertexShader = R"(
+			#version 410 core
+			layout (location = 0) in vec3 position;
+			void main() {
+				gl_position = vec4(position , 1.0);
+			}
+		)";
+
+		const char* fragmentShader = R"(
+			#version 410 core
+			out vec4 outColor;
+			void main() {
+				outColor = vec4(1.0)
+			}
+		)";
+		std:shared_ptr<graphics::Shader> shader(vertexShader , fragmentShader);
+
 		state->window.beginRender();
+
+		auto rc = std::make_unique<graphics::rendercommands::RenderMesh>(mesh , shader);
+		state->renderer.submit(std::move(rc));
+		state->renderer.flush();
 
 		state->window.endRender();
 
@@ -75,21 +111,27 @@ namespace machy {
 		@params--> nothing
 		@return--> void
 
-	-	> shuts down relevant managers
+		-> shuts down relevant managers
 	*/
 	void MachY::shutdown() {
 
-		Log("[[MACHINE SHUTTING DOWN]]");
-		// state->scenes.
-		Log("Shutting Down Window");
-		state->window.shutdown();
-		Log("Window Shut Down Successful");
+		MACHY_TRACE("MACHINE SHUTTING DOWN");
 
-		Log("Closing Log");
+		MACHY_TRACE("Shutting Down Renderer");
+		state->renderer.shutdown();
+
+		MACHY_TRACE("Shutting Down Window");
+		state->window.shutdown();
+		MACHY_TRACE("Window Shut Down Successful");
+
 		state->log.shutdown();
 
+		std::cout << "[ MACHINE Y SUCCESFUL SHUTDOWN ]" << std::endl;
 		std::cout << "[[[ Goodbye ]]]" << std::endl;
 		std::cout << "[[[ $$$ ]]]" << std::endl;
+
+		initialized = false;
+
 		return;
 	}
 
@@ -114,21 +156,23 @@ namespace machy {
 	*/
 	bool MachY::init(App *& app) {
 
-		std::cout << "[[[ $$$ ]]]" << std::endl;
-		std::cout << "[[[ Hello ]]]" << std::endl;
-		std::cout << "[[[ System booting up ]]]" << std::endl;
-
 		state = std::make_unique<GlobalState>();
-		if (!state->create(app->getData()))
+		if (!state->create(app->getData() , initialized)) {
+			MACHY_FATAL("STATE CREATION FAILURE");
 			return false;
-		Log("[[SYSTEM STATE INITIALIZED]]");
-	
+		}
+
 		input::mouse::Initialize();
 		input::keyboard::Initialize();
 
-		Log("System initialized");
+		MACHY_TRACE("SYSTEM STATE INITIALIZED");
 		std::cout << "\n";
-		Log("[[ WELCOME TO MACHY ]]");
+		MACHY_TRACE(">>> WELCOME TO MACHY <<<");
+
+		std::cout << "\n";
+		getInfo();
+		std::cout << std::endl;
+
 		initialized = true;
 
 		delete app;
@@ -158,13 +202,25 @@ namespace machy {
 		-> checks MachY configuration and Logs relevant information
 	*/
 	void MachY::getInfo() {
-		Log("[[RUNNING MACHINE Y] | V" + state->version + "]");
+		MACHY_INFO("Machine Y {}" , state->version);
 #ifdef MACHY_CONFIG_DEBUG
-		Log("[CONFIG]--> debug]");
+		MACHY_INFO("[CONFIG]--> debug");
 #endif
 
 #ifdef MACHY_CONFIIG_RELEASE
-		Log("[CONFIG]--> release]");
+		MACHY_INFO("[CONFIG]--> release");
+#endif
+
+#ifdef MACHY_PLATFORM_WINDOWS
+		MACHY_INFO("[Platform]--> windows");
+#endif
+
+#ifdef MACHY_PLATFORM_LINUX
+		MACHY_INFO("[Platform]--> linux");
+#endif
+
+#ifdef MACHY_PLATFORM_MAC
+		MACHY_INFO("[Platform]--> mac");
 #endif
 
 		return;
@@ -181,16 +237,12 @@ namespace machy {
 	*/
 	void MachY::run(App *& app) {
 		if (init(app)) {
-			std::cout << "\n";
-			getInfo();
-			std::cout << std::endl;
-
 			running = true;
 			mainLoop();
 
 			shutdown();
 		} else {
-			std::cout << "{!!!}>>> [INITIALIZATION FAILED] <<<[]" << std::endl;
+			MACHY_FATAL("[ INITIALIZATION FAILED ]");
 		}
 
 		return;

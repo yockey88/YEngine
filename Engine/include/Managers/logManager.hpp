@@ -1,25 +1,21 @@
 #ifndef LOG_MANAGER_HPP
 #define LOG_MANAGER_HPP
 
-#include <iostream>
+#include "log.hpp"
+
 #include <queue>
 #include <string>
 #include <fstream>
+#include <memory>
 
 namespace machy {
 
 namespace managers {
 
     class LogManager {
-        std::string mainlog = "main_logs/log.txt";
-        std::string errlog = "err_logs/errLog.txt";
-        std::queue<std::string> logQueue;
-        std::ofstream mainsink;
-        std::ofstream errsink;
+        std::shared_ptr<spdlog::logger> MainLogger;
+        std::shared_ptr<spdlog::logger> ErrLogger;
         bool open;
-
-        void out(const std::string &data , bool error);
-        void file(const std::string &data , bool error);
 
         // Delete Copy Constructors
         LogManager (const LogManager&) = delete;
@@ -28,12 +24,10 @@ namespace managers {
             LogManager() {}
             ~LogManager() { shutdown(); }
 
-            void log(const std::string &data);
-            void error(const std::string &data);
+            void init();
 
             void shutdown();
 
-            std::queue<std::string>& getLogQueue() { return logQueue; }
             inline bool isOpen() { return open; }
     };
 

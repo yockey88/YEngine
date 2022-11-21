@@ -4,9 +4,6 @@
 #include "state.hpp"
 #include "app.hpp"
 
-#define LOG(data) machy::MachY::Instance().Log(data);
-#define ERR(data) machy::MachY::Instance().Err(data);
-
 namespace machy {
 
 	class MachY {
@@ -41,10 +38,6 @@ namespace machy {
 
 			inline machy::core::Window& getWindow() { return state->window; }
 			inline machy::managers::LogManager& getLog() { return state->log; }
-			inline machy::managers::SceneManager& getScenes() { return state->scenes; }
-
-			inline void Log(const std::string& data) { state->log.log(data); }
-			inline void Err(const std::string& err) { state->log.error(err); }
 	};
 
 }

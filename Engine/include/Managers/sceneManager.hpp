@@ -3,36 +3,24 @@
 
 #include "app.hpp"
 #include "Scene/scene.hpp"
+#include <string>
+#include <memory.h>
 
 namespace machy {
 namespace managers {
 
-    struct SceneNode {
-        int key;
-        scene::Scene* scene;
-    };
-
     class SceneManager {
-        scene::Map world;
-
-        int gridDim , sideLength;
-
-        bool menuView;
-
-        std::vector<std::string> activeSceneLog;
+        std::shared_ptr<graphics::Scene> activeScene;
         
         SceneManager (const SceneManager&) = delete;
         SceneManager& operator= (const SceneManager&) = delete;  
         public:
-            SceneManager();
-            ~SceneManager();
+            SceneManager() {}
+            ~SceneManager() {}
 
-            bool init(const SceneData& sceneData);
+            bool init(const std::string& appScenesPath);
 
-            void render(SDL_Renderer* renderer);
-            void printActiveLog();
-
-            inline std::vector<std::string>& getActiveLog() { return activeSceneLog; }
+            inline std::shared_ptr<graphics::Scene> getActiveScene() { return activeScene; }
     };
 
 }
