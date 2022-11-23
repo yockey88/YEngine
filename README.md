@@ -10,7 +10,7 @@ ImGui windows, menus, etc...
  - Machine Y Core Class (singleton)
 
 ### Machine Y
- - Main Editor for Machine Y Engine
+ - Main Editor for the Machine Y Engine
  - App used for testing and development
 
 
