@@ -3,19 +3,14 @@ SDL/OpenGL Game Engine for learning purposes
 ImGui windows, menus, etc...
 
 ## Built with the help of Progrematic's youtube series
- - [Youtube](https://www.youtube.com/@Progrematic)\n
+ - [Youtube](https://www.youtube.com/@Progrematic)
  - [GitHub](https://github.com/progrematic)
 
 ### Engine
  - Machine Y Core Class (singleton)
-    - Window\n
-    - Log Manager\n
-    - Render Manager\n
-    
- - Runs a polymorphic machy::App
 
 ### Machine Y
- - Main Editor for Machine Y Engine\n
+ - Main Editor for Machine Y Engine
  - App used for testing and development
 
 
