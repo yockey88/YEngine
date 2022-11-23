@@ -10,14 +10,14 @@ namespace input {
     class mouse {
         constexpr static const int ButtonCount = 5;
 
-        static int xLast , yLast;
-        static int x , y;
+        static int x , xLast;
+        static int y , yLast;
 
         static std::array<bool , ButtonCount> buttons;
         static std::array<bool , ButtonCount> buttonsLast;
         public:
-            static void Initialize();
-            static void  UpdatePos();
+            static void initialize();
+            static void  update();
 
             inline static int X() { return x; }
             inline static int Y() { return y; }
@@ -25,9 +25,9 @@ namespace input {
             inline static int DX() { return x - xLast; }
             inline static int DY() { return y - yLast; }
 
-            static bool Button(int button);
-            static bool ButtonDown(int button);
-            static bool ButtonUp(int button);
+            static bool button(int button);
+            static bool buttonDown(int button);
+            static bool buttonUp(int button);
 
             static void printMousePos();
     };
@@ -37,13 +37,13 @@ namespace input {
 } // End of Y
 
 enum {
-    Y_INPUT_MOUSE_FIRST = 1 ,
-    Y_INPUT_MOSUEE_LEFT = Y_INPUT_MOUSE_FIRST ,
-    Y_INPUT_MOUSE_MIDDLE = 2 ,
-    Y_INPUT_MOUSE_RIGHT = 3 ,
-    Y_INPUT_MOUSE_X1 = 4 ,
-    Y_INPUT_MOUSE_X2 = 5 ,
-    Y_INPUT_MOUSE_LAST = 5
+    MACHY_INPUT_MOUSE_FIRST = 1 ,
+    MACHY_INPUT_MOUSE_LEFT = MACHY_INPUT_MOUSE_FIRST ,
+    MACHY_INPUT_MOUSE_MIDDLE = 2 ,
+    MACHY_INPUT_MOUSE_RIGHT = 3 ,
+    MACHY_INPUT_MOUSE_X1 = 4 ,
+    MACHY_INPUT_MOUSE_X2 = 5 ,
+    MACHY_INPUT_MOUSE_LAST = 5
 };
 
 #endif /* mous.hpp */

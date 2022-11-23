@@ -12,12 +12,11 @@
 #define MACHY_BREAK __debugbreak();
 #elif defined(MACHY_PLATFORM_MAC)
 #define MACHY_BREAK __builtin_debugtrap();
-#else 
+#else
 #define MACHY_BREAK __builtin_trap();
 #endif
 
 #ifndef MACHY_CONFIG_RELEASE
-
 #define MACHY_TRACE(...) \
     if (spdlog::get(MACHY_DEFAULT_LOGGER_NAME) != nullptr) { \
         spdlog::get(MACHY_DEFAULT_LOGGER_NAME)->trace(__VA_ARGS__);\
@@ -44,10 +43,8 @@
     }
 #define MACHY_ASSERT(x , msg) \
     if ((x)) {} \
-    else { MACHY_FATAL("|!|ASSERT|!| -> {}\n\t|{}|\n\t| in file: {}|\n\t| in line: {}|" , x , msg , __FILE__ , __LINE__); MACHY_BREAK }
-
+    else { MACHY_FATAL("|!|ASSERT|!| -> {}|\n\t\t|{}|\n\t\t| in file: {}|\n\t\t| in line: {}|" , x , msg , __FILE__ , __LINE__); MACHY_BREAK }
 #else
-
 #define MACHY_TRACE(...) (void)0
 #define MACHY_TRACE(...) (void)0
 #define MACHY_DEBUG(...) (void)0
@@ -55,9 +52,6 @@
 #define MACHY_WARN(...) (void)0
 #define MACHY_ERROR(...) (void)0
 #define MACHY_FATAL(...) (void)0
-
 #endif
-
-
 
 #endif

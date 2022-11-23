@@ -1,139 +1,14 @@
 #include "machy.hpp"
 #include "log.hpp"
-#include "Graphics/mesh.hpp"
-#include "Graphics/shader.hpp"
-#include <iostream>
-#include <chrono>
+#include "Input/mouse.hpp"
+#include "Input/keyboard.hpp"
+#include "Input/joystick.hpp"
 
 namespace machy {
 	/* Singletone Instance
 		-> initialize to nullptr
 	*/
 	MachY* MachY::instance = nullptr;
-
-	/* mainLoop()
-		@param--> nothing
-		@return--> void
-
-		-> updates all managers
-			-- logs all relevant logs from last frame(?)
-			-- filter updates into managers
-
-		-> controls render window
-	*/
-	void MachY::mainLoop() {
-
-		while (running) {
-			update();
-			render();
-		}
-
-		return;
-	}
-
-	/* update()
-		@param--> nothing
-		@return--> void
-
-		-> flushes window events to build EventData struct
-			-- see core::Window::flushEvents() for more (Core/window.hpp)
-
-		-> grabs logs from event data [logs]->[log manager]
-
-		-> takes user input and feeds to <?> scene Manager|app|game </?>
-	*/
-	void MachY::update() {
-		core::EventData eD = state->window.flushEvents();
-		if (eD.key < 0) {
-			running = false;
-			return;
-		}
-
-		/* 
-			Updates App with Window Events
-			Updates Managers with App Updates
-			
-			Prepares for Next Render Pass
-		*/
-
-		return;
-	}
-
-	/* render()
-		@param--> nothing
-		@return--> void
-
-		-> calls relevant rendering functions
-			-- see 
-				core::Window::beginRender()
-				core::Window::endRender()
-				core::Gui::beginRender()
-				core::Gui::endRender()
-			   for more
-	*/
-	void MachY::render() {
-
-		float vertices[] { -0.5f , -0.5f , 0.f , 
-							0.f  , 	0.5f , 0.f ,
-							0.5f , -0.5f , 0.f }
-
-		std::shared_ptr<graphics::Mesh> mesh(&vertices[0] , 3 , 3);
-		
-		const char* vertexShader = R"(
-			#version 410 core
-			layout (location = 0) in vec3 position;
-			void main() {
-				gl_position = vec4(position , 1.0);
-			}
-		)";
-
-		const char* fragmentShader = R"(
-			#version 410 core
-			out vec4 outColor;
-			void main() {
-				outColor = vec4(1.0)
-			}
-		)";
-		std:shared_ptr<graphics::Shader> shader(vertexShader , fragmentShader);
-
-		state->window.beginRender();
-
-		auto rc = std::make_unique<graphics::rendercommands::RenderMesh>(mesh , shader);
-		state->renderer.submit(std::move(rc));
-		state->renderer.flush();
-
-		state->window.endRender();
-
-		return;
-	}
-
-	/* shutdown()
-		@params--> nothing
-		@return--> void
-
-		-> shuts down relevant managers
-	*/
-	void MachY::shutdown() {
-
-		MACHY_TRACE("MACHINE SHUTTING DOWN");
-
-		MACHY_TRACE("Shutting Down Renderer");
-		state->renderer.shutdown();
-
-		MACHY_TRACE("Shutting Down Window");
-		state->window.shutdown();
-		MACHY_TRACE("Window Shut Down Successful");
-
-		state->log.shutdown();
-
-		std::cout << "[ MACHINE Y SUCCESFUL SHUTDOWN ]" << std::endl;
-		std::cout << "[[[ Goodbye ]]]" << std::endl;
-		std::cout << "[[[ $$$ ]]]" << std::endl;
-
-		initialized = false;
-
-		return;
-	}
 
 	/* init()
 		@param--> nothing
@@ -154,30 +29,105 @@ namespace machy {
 			-- moude
 			-- <?> gamepad </?>
 	*/
-	bool MachY::init(App *& app) {
+	bool MachY::init() {
 
-		state = std::make_unique<GlobalState>();
-		if (!state->create(app->getData() , initialized)) {
-			MACHY_FATAL("STATE CREATION FAILURE");
-			return false;
+        MACHY_ASSERT(!initialized , "Attempting to call MachY::Initialize() more than once");
+        if (!initialized) {
+            MACHY_TRACE("[[ SYSTEM BOOTING UP ]]");
+            MACHY_TRACE("[[ INITIALIZING SYSTEM STATE ]]");
+
+            MACHY_TRACE("Creating Window");
+            if (!window.create(ActiveApp->GetWindowProperties())) {
+                MACHY_FATAL("Could Not Create Engine Window");
+                return false;
+            }
+            MACHY_INFO("Window Creation Successful");
+            
+            MACHY_TRACE("Initializing Render Manager");
+            renderer.init();
+
+			input::mouse::initialize();
+			input::keyboard::initialize();
+
+			std::cout << std::endl;
+			MACHY_TRACE(">>> WELCOME TO MACHY <<<");
+			getInfo();
+			ActiveApp->Initialize();
+			std::cout << std::endl;
+			
+			initialized = true;
+
+			return true;
 		}
 
-		input::mouse::Initialize();
-		input::keyboard::Initialize();
+		return false;
+	}
 
-		MACHY_TRACE("SYSTEM STATE INITIALIZED");
-		std::cout << "\n";
-		MACHY_TRACE(">>> WELCOME TO MACHY <<<");
+	/* update()
+		@param--> nothing
+		@return--> void
 
-		std::cout << "\n";
-		getInfo();
-		std::cout << std::endl;
+		-> flushes window events to build EventData struct
+			-- see core::Window::flushEvents() for more (Core/window.hpp)
 
-		initialized = true;
+		-> grabs logs from event data [logs]->[log manager]
 
-		delete app;
+		-> takes user input and feeds to <?> scene Manager|app|game </?>
+	*/
+	void MachY::update() {
+		
+		window.flushEvents();
+		ActiveApp->Update();
 
-		return true;
+		return;
+	}
+
+	/* render()
+		@param--> nothing
+		@return--> void
+
+		-> calls relevant rendering functions
+			-- see 
+				core::Window::beginRender()
+				core::Window::endRender()
+			   for more
+	*/
+	void MachY::render() {
+
+		window.beginRender();
+		ActiveApp->Render();
+		window.endRender();
+
+		return;
+	}
+
+	/* shutdown()
+		@params--> nothing
+		@return--> void
+
+		-> shuts down relevant managers
+	*/
+	void MachY::shutdown() {
+
+		MACHY_TRACE("MACHINE SHUTTING DOWN");
+		ActiveApp->Shutdown();
+
+		MACHY_TRACE("Shutting Down Renderer");
+		renderer.shutdown();
+
+		MACHY_TRACE("Shutting Down Window");
+		window.shutdown();
+		MACHY_TRACE("Window Shut Down Successful");
+
+		log.shutdown();
+
+		std::cout << "[ MACHINE Y SUCCESSFUL SHUTDOWN ]" << std::endl;
+		std::cout << "[[[ Goodbye ]]]" << std::endl;
+		std::cout << "[[[ $$$ ]]]" << std::endl;
+
+		initialized = false;
+
+		return;
 	}
 
 	/* Instance()
@@ -202,7 +152,7 @@ namespace machy {
 		-> checks MachY configuration and Logs relevant information
 	*/
 	void MachY::getInfo() {
-		MACHY_INFO("Machine Y {}" , state->version);
+		MACHY_INFO("Machine Y {}" , version);
 #ifdef MACHY_CONFIG_DEBUG
 		MACHY_INFO("[CONFIG]--> debug");
 #endif
@@ -222,7 +172,7 @@ namespace machy {
 #ifdef MACHY_PLATFORM_MAC
 		MACHY_INFO("[Platform]--> mac");
 #endif
-
+		std::cout << std::endl;
 		return;
 	}
 
@@ -236,11 +186,23 @@ namespace machy {
 			[failure]-> outputs error code and shuts down
 	*/
 	void MachY::run(App *& app) {
-		if (init(app)) {
+		log.init();
+		MACHY_ASSERT(app != nullptr , "Attempting to call Engine::Run() with more than one app");
+		if (app == nullptr) return;
+
+		ActiveApp = app;
+
+		if (init()) {
+			
 			running = true;
-			mainLoop();
+
+			while (running) {
+				update();
+				render();
+			}
 
 			shutdown();
+
 		} else {
 			MACHY_FATAL("[ INITIALIZATION FAILED ]");
 		}

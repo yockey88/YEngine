@@ -1,117 +1,72 @@
 #include "machy.hpp"
 #include "Core/imguiWin.hpp"
 #include "Core/window.hpp"
+
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+
 #include <stdlib.h>
 #include <iostream>
 
 namespace machy::core {
 
-	bool Gui::create(SDL_Window* window , SDL_Renderer* renderer , const GuiData& gProps) {
-#ifdef MACHY_GUI
-		if (gProps.show)
-			showGui = true;
-#endif
-#ifdef MACHY_CONFIG_DEBUG
-		if(gProps.metrics && gProps.bench) {
-			showMetrics = true;
-			showBench = true;
-		}
-#endif
-		// showMachine = true;
-		if (gProps.structSettings)
-			showStructSettings = true;
+    void Gui::create(const ImguiWindowProperties& props) {
+        
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& io = ImGui::GetIO();
+        io.ConfigWindowsMoveFromTitleBarOnly = props.moveFromTitleBarOnly;
+        if (props.isDockingEnabled)
+            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        if (props.isViewportEnabled)
+            io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-		IMGUI_CHECKVERSION();
-		ImGui::CreateContext();
-		ImGuiIO& io = ImGui::GetIO();
-		io.ConfigWindowsMoveFromTitleBarOnly = true;
-		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        auto& window = MachY::Instance().getWindow();
+        ImGui_ImplSDL2_InitForOpenGL(window.getSDLWindow() , window.getSDL_GLContext());
+        ImGui_ImplOpenGL3_Init("#version 410");
 
-		if (!ImGui_ImplSDL2_InitForSDLRenderer(window, renderer)) {
-			MACHY_FATAL("ImGui Initialization for SDL2 Failed");
-			return false;
-		}
+        return;
+    }
 
-		if (!ImGui_ImplSDLRenderer_Init(renderer)) {
-			MACHY_FATAL("ImGui Initialization for SDL2 Renderer Failed");
-			return false;
-		}
+    void Gui::shutdown() {
 
-		MACHY_INFO("ImGui Initialization Complete");
+        ImGui_ImplOpenGL3_Shutdown();
+        ImGui_ImplSDL2_Shutdown();
+        ImGui::DestroyContext();
 
-		return true;
-	}
+        return;
+    }
 
-	void Gui::beginRender(SDL_Window* window) {
-		if (showGui) {
-			ImGui_ImplSDLRenderer_NewFrame();
-			ImGui_ImplSDL2_NewFrame(window);
-			ImGui::NewFrame();
+    void Gui::handleSDLEvent(SDL_Event& e) {
 
-			options();
-			if (showMetrics) metrics();
-			if (showStructSettings) structs();
-		}
+        ImGui_ImplSDL2_ProcessEvent(&e);
+        return;
 
-		return;
-	}
+    }
 
-	void Gui::handleSDLEvent(SDL_Event& e) {
-		ImGui_ImplSDL2_ProcessEvent(&e);
+    void Gui::beginRender() {
 
-		return;
-	}
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame(MachY::Instance().getWindow().getSDLWindow());
+        ImGui::NewFrame();
 
-	void Gui::options() {
-		if (!showOptions) 
-			showOptions = true;
+        return;
+    }
 
-		ImGui::Begin("[Machine Options]" , &showOptions , ImGuiWindowFlags_MenuBar);
-		if (ImGui::BeginMenuBar()) {
-			if (ImGui::BeginMenu("[TOOLS]")) {
-				if (ImGui::MenuItem("Metrics" , "Ctrl+M")) { if (!showMetrics) showMetrics = true; }
-				if (ImGui::MenuItem("Structs" , "Ctrl+G")) { if(!showStructSettings) showStructSettings = true; }
-				// if (ImGui::MenuItem("Machine" , "Ctrl+Y")) { if (!showMachine) showMachine = true; }
-				if (ImGui::MenuItem("Clear Console" , "Ctrl+C")) { system("clear"); }
-				ImGui::EndMenu();
-			}
-			ImGui::EndMenuBar();
-		}
+    void Gui::endRender() {
 
-		if (showBench) {
-			ImGui::Text("[Gui Ticks : %f]" , ImGui::GetTime());
-			ImGui::Text("[Machine FrameRate : %f]" , ImGui::GetIO().Framerate);
-		}
+        ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-		ImGui::End();
-
-		return;
-	}
-
-	void Gui::structs() {
-		ImGui::Begin("[]" , &showStructSettings , ImGuiWindowFlags_MenuBar);
-		
-		ImGui::End();
-
-		return;
-	} 
-
-	void Gui::endRender(SDL_Renderer* renderer) {
-		if (showGui) {
-			ImGui::Render();
-			SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-			SDL_RenderClear(renderer);
-			ImGui_ImplSDLRenderer_RenderDrawData(ImGui::GetDrawData());
-		}
-
-		return;
-	}
-
-	void Gui::shutdown() {
-		ImGui_ImplSDL2_Shutdown();
-		ImGui::DestroyContext();
-
-		return;
-	}
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+            auto& window = MachY::Instance().getWindow();
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+            SDL_GL_MakeCurrent(window.getSDLWindow() , window.getSDL_GLContext());
+        }
+        return;
+    }
 
 }

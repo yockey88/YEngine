@@ -14,17 +14,20 @@ namespace input {
     std::array<bool, mouse::ButtonCount> mouse::buttons;
 	std::array<bool, mouse::ButtonCount> mouse::buttonsLast;
 
-    void mouse::Initialize() {
+    void mouse::initialize() {
         std::fill(buttons.begin(), buttons.end(), false);
 		std::fill(buttonsLast.begin(), buttonsLast.end(), false);
         MACHY_TRACE("Mouse Initialized");
         return;
     }
 
-    void mouse::UpdatePos() {
+    void mouse::update() {
+
         xLast = x;
 		yLast = y;
-		buttonsLast = buttons;	// TODO Optimization: is memcpy faster?
+
+        buttonsLast = buttons;
+
 		Uint32 state = SDL_GetMouseState(&x, &y);
 		for (int i = 0; i < ButtonCount; i++) {
 			buttons[i] = state & SDL_BUTTON(i + 1);
@@ -32,34 +35,34 @@ namespace input {
         return;
     }
 
-    bool mouse::Button(int button) {
-        if (button >= Y_INPUT_MOUSE_FIRST && button <= Y_INPUT_MOUSE_LAST) {
+    bool mouse::button(int button) {
+        MACHY_ASSERT(button >= MACHY_INPUT_MOUSE_FIRST && button <= MACHY_INPUT_MOUSE_LAST , "Mouse Button Invalid");
+        if (button >= MACHY_INPUT_MOUSE_FIRST && button <= MACHY_INPUT_MOUSE_LAST) {
 			return buttons[button - 1];
 		}
         return false;
     }
 
-    bool mouse::ButtonDown(int button) {
-        if (button >=  Y_INPUT_MOUSE_FIRST && button <=  Y_INPUT_MOUSE_LAST) {
+    bool mouse::buttonDown(int button) {
+        MACHY_ASSERT(button >= MACHY_INPUT_MOUSE_FIRST && button <= MACHY_INPUT_MOUSE_LAST , "Mouse Button Invalid");
+        if (button >=  MACHY_INPUT_MOUSE_FIRST && button <=  MACHY_INPUT_MOUSE_LAST) {
 			return buttons[button - 1] && !buttonsLast[button - 1];
 		}
         return false;
     }
 
-    bool mouse::ButtonUp(int button) {
-        if (button >=  Y_INPUT_MOUSE_FIRST && button <=  Y_INPUT_MOUSE_LAST) {
+    bool mouse::buttonUp(int button) {
+        MACHY_ASSERT(button >= MACHY_INPUT_MOUSE_FIRST && button <= MACHY_INPUT_MOUSE_LAST , "Mouse Button Invalid");
+        if (button >=  MACHY_INPUT_MOUSE_FIRST && button <=  MACHY_INPUT_MOUSE_LAST) {
 			return !buttons[button - 1] && buttonsLast[button - 1];
 		}
         return false;
     }
 
     void mouse::printMousePos() {
-        std::string pos = "<";
-        pos += std::to_string(input::mouse::X());
-        pos += " , ";
-        pos += std::to_string(input::mouse::X());
-        pos += ">";
-        // MachY::Instance().Out(pos);
+
+        MACHY_TRACE("<{} , {}>" , X() , Y());
+
         return;
     }
 

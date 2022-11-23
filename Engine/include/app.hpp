@@ -1,43 +1,26 @@
 #ifndef APP_HPP
 #define APP_HPP
 
-#include "Parsers/cmndParser.hpp"
-#include "SDL.h"
+#include "machy.hpp"
+#include "Core/window.hpp"
+
+#include <iostream>
 #include <string>
 
 namespace machy {
-
-    struct GuiData {
-        bool show;
-        bool metrics , bench;
-        bool structSettings;
-
-        GuiData() : show(false), metrics(false), bench(false), structSettings(false) {}
-    };
-
-    struct WinData {
-        int scrnH , scrnW;
-
-        WinData() : scrnH(0), scrnW(0) {}
-    };
-
-    struct AppData {
-        WinData winData;
-        GuiData guiData;
-        std::string name , version;
-        std::string loadPath , scenePath;
-
-        AppData() : name("{BLANK}"), version("{0.0.0}") {}
-    };
 
     class App {
         public:
             virtual ~App() {}
 
-            virtual void InitArgs(const int& argc , char* argv[]) {}
-            virtual void InitNoArgs() {}
+            virtual core::WindowProperties GetWindowProperties() { return core::WindowProperties(); }
 
-            virtual AppData* getData() { return nullptr; }
+            virtual void Initialize() {}
+            virtual void Shutdown() {}
+
+            virtual void Update() {}
+            virtual void Render() {}
+            virtual void ImGuiRender() {}
     };
     
 }

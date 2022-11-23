@@ -1,25 +1,39 @@
 #ifndef MACHY_HPP
 #define MACHY_HPP
 
-#include "state.hpp"
 #include "app.hpp"
+#include "Core/window.hpp"
+#include "Managers/logManager.hpp"
+#include "Managers/renderManager.hpp"
+#include "Graphics/mesh.hpp"
+#include "Graphics/shader.hpp"
+
+#include <iostream>
+#include <chrono>
+#include <memory>
 
 namespace machy {
 
 	class MachY {
 		static MachY* instance;
+        App* ActiveApp;
+
+		core::Window window;
 		
-		std::unique_ptr<GlobalState> state;
+		managers::LogManager log;
+        managers::RenderManager renderer;
 
 		bool initialized, running;
 
-		MachY() : initialized(false), running(false) {}
+		std::string name;
+        std::string version;
 
-		[[nodiscard]] bool init(App *& app);
-					
-		void mainLoop();
+		MachY() : ActiveApp(nullptr) , initialized(false), running(false) {}
+
+		[[nodiscard]] bool init();
 
 		void update();
+		void updateInput();
 		void render();
 		
 		void shutdown();
@@ -36,8 +50,10 @@ namespace machy {
 
 			inline void quit() { running = false; }
 
-			inline machy::core::Window& getWindow() { return state->window; }
-			inline machy::managers::LogManager& getLog() { return state->log; }
+			inline App& getApp() { return *ActiveApp; }
+			inline core::Window& getWindow() { return window; }
+			inline managers::LogManager& getLog() { return log; }
+			inline managers::RenderManager& getRM() { return renderer; }
 	};
 
 }

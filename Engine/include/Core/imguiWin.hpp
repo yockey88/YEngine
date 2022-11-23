@@ -1,41 +1,37 @@
 #ifndef IMGUIWIN_HPP
 #define IMGUIWIN_HPP
 
-#include "app.hpp"
+#include "SDL.h"
+#undef main
 #include "imgui.h"
-#include "imgui_impl_sdl.h"
-#include "imgui_impl_sdlrenderer.h"
 
 namespace machy {
 namespace core {
 
+	struct ImguiWindowProperties {
+		bool moveFromTitleBarOnly = true;
+		bool isDockingEnabled = false;
+		bool isViewportEnabled = false;
+	};
+
 	class Gui {
-		bool showOptions = true;
-		bool showGui , showMetrics , showBench; // , showMachine;
-		bool showStructSettings;
 
 		Gui(const Gui&) = delete;
 		Gui& operator=(const Gui&) = delete;
 
 		public:
-			Gui() : showGui(false) , showMetrics(false) , showBench(false) , showStructSettings(false) {}
-			~Gui() { shutdown(); }
+			Gui() {}
+			~Gui() { }
 
-			[[nodiscard]] bool create(SDL_Window* window , SDL_Renderer* renderer , const GuiData& gProps);
-			
-			void beginRender(SDL_Window* window);
-
-			void handleSDLEvent(SDL_Event& e);
-			void options();
-			inline void metrics() { ImGui::ShowMetricsWindow(&showMetrics); }
-			void structs();
-
-			void endRender(SDL_Renderer* renderer);
-
+			void create(const ImguiWindowProperties& props);
 			void shutdown();
 
-			inline bool wantCaptureMouse() { return ImGui::GetIO().WantCaptureMouse; }
-			inline bool wantCaptureKeyboard() { return ImGui::GetIO().WantCaptureKeyboard; }
+			void handleSDLEvent(SDL_Event& e);
+			bool wantMouse() { return ImGui::GetIO().WantCaptureMouse; }
+			bool wantKeyboard() { return ImGui::GetIO().WantCaptureKeyboard; }
+
+			void beginRender();
+			void endRender();
 	};
 
 }

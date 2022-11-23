@@ -42,17 +42,17 @@ namespace input {
                 DPAD_Right,
                 Count
             };
-            static void OnJoystickConnected(SDL_ControllerDeviceEvent& e);
-            static void OnJoystickDisconnected(SDL_ControllerDeviceEvent& e);
-            static void Shutdown();
-            static void UpdateGamePad();
+            static void onJoystickConnected(SDL_ControllerDeviceEvent& e);
+            static void onJoystickDisconnected(SDL_ControllerDeviceEvent& e);
+            static void shutdown();
+            static void update();
 
-            static bool IsJoystickAvailable(int joystickId);
+            static bool isJoystickAvailable(int joystickId);
 
-            static bool GetButton(int joystickId, Button button);
-            static bool GetButtonDown(int joystickId, Button button);
-            static bool GetButtonUp(int joystickId, Button button);
-            static float GetAxis(int joystickId, Axis axis);
+            static bool getButton(int joystickId, Button button);
+            static bool getButtonDown(int joystickId, Button button);
+            static bool getButtonUp(int joystickId, Button button);
+            static float getAxis(int joystickId, Axis axis);
 
         private:
             struct Controller {
@@ -66,7 +66,7 @@ namespace input {
             };
             static std::unordered_map<int , std::unique_ptr<Controller>> availableJoysticks;
             static float deadzone;
-            static int GetNextFreeIndex();
+            static int getNextFreeIndex();
         
     };
 

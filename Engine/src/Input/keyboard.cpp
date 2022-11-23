@@ -9,36 +9,40 @@ namespace input {
     std::array<bool,  keyboard::KeyCount>  keyboard::keys;
 	std::array<bool,  keyboard::KeyCount>  keyboard::keysLast;
 
-	void  keyboard::Initialize() {
+	void  keyboard::initialize() {
 		std::fill(keys.begin(), keys.end(), false);
 		std::fill(keysLast.begin(), keysLast.end(), false);
         MACHY_TRACE("Keyboard Initialized");
 	}
 
-	void  keyboard::UpdateKeys() {
+	void  keyboard::update() {
 		keysLast = keys;
+		
 		const Uint8* state = SDL_GetKeyboardState(nullptr);
-		for (int i =  Y_INPUT_KEY_FIRST; i < KeyCount; i++) {
+		for (int i = 0; i < KeyCount; i++) {
 			keys[i] = state[i];
 		}
 	}
 
-	bool  keyboard::Key(int key) {
-		if (key >=  Y_INPUT_KEY_FIRST && key < KeyCount) {
+	bool  keyboard::key(int key) {
+		MACHY_ASSERT(key >= MACHY_INPUT_KEY_FIRST && key <= KeyCount , "Invalid keybaord key");
+		if (key >=  MACHY_INPUT_KEY_FIRST && key < KeyCount) {
 			return keys[key];
 		}
 		return false;
 	}
 
-	bool  keyboard::KeyDown(int key) {
-		if (key >=  Y_INPUT_KEY_FIRST && key < KeyCount) {
+	bool  keyboard::keyDown(int key) {
+		MACHY_ASSERT(key >= MACHY_INPUT_KEY_FIRST && key <= KeyCount , "Invalid keybaord key");
+		if (key >=  MACHY_INPUT_KEY_FIRST && key < KeyCount) {
 			return keys[key] && !keysLast[key];
 		}
 		return false;
 	}
 
-	bool  keyboard::KeyUp(int key) {
-		if (key >=  Y_INPUT_KEY_FIRST && key < KeyCount) {
+	bool  keyboard::keyUp(int key) {
+		MACHY_ASSERT(key >= MACHY_INPUT_KEY_FIRST && key <= KeyCount , "Invalid keybaord key");
+		if (key >=  MACHY_INPUT_KEY_FIRST && key < KeyCount) {
 			return !keys[key] && keysLast[key];
 		}
 		return false;

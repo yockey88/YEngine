@@ -1,6 +1,7 @@
 MAIN_NAME = "MachineY"
 ENGINE_NAME = "Engine"
-PROJECT_NAME = "MachyDev"
+DEV_NAME = "MachyDev"
+PONG_NAME = "PongV1"
 
 TOOLS_DIR = "tools"
 
