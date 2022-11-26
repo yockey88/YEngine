@@ -20,7 +20,7 @@ ImGui windows, menus, etc...
  - run 
     - -config=[debug] || [release]
     - -proj=[MachyDev] || [PongV1] 
-        - for running your own from this flag you will need to edit the run.py file located in the 'tools' directory.
+        - for running your own project from this flag you will need to edit the run.py file located in the 'tools' directory.
 ### Engine
  - Machine Y Core Class (singleton)
 
