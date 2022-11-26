@@ -46,7 +46,7 @@ namespace machy {
 			~MachY() { shutdown();  }
 			void getInfo();
 
-			void run(App *& app);
+			void run(App* app);
 
 			inline void quit() { running = false; }
 

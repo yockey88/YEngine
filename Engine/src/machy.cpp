@@ -183,7 +183,7 @@ namespace machy {
 
 			[failure]-> outputs error code and shuts down
 	*/
-	void MachY::run(App *& app) {
+	void MachY::run(App* app) {
 		log.init();
 		MACHY_ASSERT(app != nullptr , "Attempting to call Engine::Run() with more than one app");
 		if (app == nullptr) return;

@@ -92,8 +92,8 @@ namespace machy {
 
             virtual void Shutdown() override {
                 ball.reset();
-                paddleL.reset();
                 paddleR.reset();
+                paddleL.reset();
             }
 
             virtual void Update() override {
