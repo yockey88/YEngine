@@ -9,7 +9,6 @@ machy::App* CreateApp();
 int main() {
     machy::App* app = CreateApp();
     machy::MachY::Instance().run(app);
-    delete app;
     return 0;
 }
 

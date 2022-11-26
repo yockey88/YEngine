@@ -8,7 +8,7 @@ void GameObject::Render() {
     model = glm::scale(model , { size.x , size.y , 1.f });
     shader->setUniformMat4("model" , model);
 
-    machy::MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderMesh , mesh , shader));
+    machy::MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArray , vertArr , shader));
 
     return;
 }

@@ -15,6 +15,7 @@ namespace machy {
 
             virtual core::WindowProperties GetWindowProperties() { return core::WindowProperties(); }
 
+            virtual void InitializeLibraries() {}
             virtual void Initialize() {}
             virtual void Shutdown() {}
 

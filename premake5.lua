@@ -22,7 +22,8 @@ externals["imgui"] = "C:\\Yock/Extern/imgui-docking"
 externals["entt"] = "C:\\Yock/Extern/entt-3.11.0"
 externals["spdlog"] = "C:\\Yock/Extern/spdlog-1.11.0"
 externals["glad"] = "external/glad"
-externals["glm"] = "c:\\Yock/Extern/glm-master"
+externals["glm"] = "C:\\Yock/Extern/glm-master"
+externals["stb"] = "C:\\Yock/Extern/stb"
 
 -- Glad before all
 include "external/glad"
@@ -45,9 +46,10 @@ project "Engine"
         "%{prj.name}/src/**.cpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
-        "%{externals.glad}/src/**.c",
-        "%{externals.glad}/include/**.h",
-        "%{externals.glm}/**.hpp"
+        "%{externals.glad}**.c",
+        "%{externals.glad}**.h",
+        "%{externals.glm}/**.hpp",
+        "%{externals.stb}/*.h"
     }
 
     externalincludedirs {
@@ -57,7 +59,8 @@ project "Engine"
         "%{externals.entt}/single_include",
         "%{externals.spdlog}/include",
         "%{externals.glad}/include",
-        "%{externals.glm}"
+        "%{externals.glm}",
+        "%{externals.stb}"
     }
 
     flags { "FatalWarnings" }
@@ -130,19 +133,25 @@ project "MachyDev"
         "%{prj.name}/src/**.cpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
-        "%{externals.glm}/**.hpp"
+        "%{externals.glm}/**.hpp",
+        "%{externals.stb}/*.h"
     }
 
     externalincludedirs {
         "Engine/include",
         "%{externals.sdl2}/include",
-        "%{externals.imgui}",
+        "%{externals.glad}/include",
         "%{externals.spdlog}/include",
-        "%{externals.entt}/single_include",
-        "%{externals.glm}"
+        "%{externals.imgui}",
+        "%{externals.glm}",
+        "%{externals.stb}"
     }
 
     flags { "FatalWarnings" }
+
+    postbuildcommands {
+        "python3 " .. path.getabsolute("%{prj.name}") .. "/postBuild.py %{cfg.buildcfg}"
+    }
 
     filter { "system:windows" , "configurations:*" }
         systemversion "latest"
@@ -218,20 +227,26 @@ project "PongV1"
         "%{prj.name}/src/**.hpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
-        "%{externals.glm}/**.hpp"
+        "%{externals.glm}/**.hpp",
+        "%{externals.stb}/*.h"
     }
 
     externalincludedirs {
         "%{prj.name}/GameObjects",
         "Engine/include",
         "%{externals.sdl2}/include",
-        "%{externals.imgui}",
+        "%{externals.glad}/include",
         "%{externals.spdlog}/include",
-        "%{externals.entt}/single_include",
-        "%{externals.glm}"
+        "%{externals.imgui}",
+        "%{externals.glm}",
+        "%{externals.stb}"
     }
 
     flags { "FatalWarnings" }
+    
+    --postbuildcommands {
+       -- "python3 " .. path.getabsolute("%{prj.name}") .. "/postBuild.py %{cfg.buildcfg}"
+    --}
 
     filter { "system:windows" , "configurations:*" }
         systemversion "latest"

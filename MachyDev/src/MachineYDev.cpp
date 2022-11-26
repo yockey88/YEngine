@@ -2,8 +2,14 @@
 #include "app.hpp"
 #include "main.hpp"
 
-#include "Graphics/mesh.hpp"
+#include "Core/assetLibrary.hpp"
+
+#include "Graphics/vertex.hpp"
 #include "Graphics/shader.hpp"
+#include "Graphics/texture.hpp"
+#include "Graphics/material.hpp"
+#include "Graphics/framebuffer.hpp"
+#include "Graphics/camera.hpp"
 
 #include "Input/mouse.hpp"
 #include "Input/keyboard.hpp"
@@ -14,133 +20,292 @@
 
 using namespace machy;
 
-/* [GOALS]
-	-> save state load / serialization of program
-	-> Main Menu in main
-		- MachY [Core Machine | Admin??]
-		- GameY [Game Engine]
-		- ???? 
-	[FINISHED]
-	Command Line Arguments / Engine Flags $$$
-*/
-
 class Dev : public App {
-	std::shared_ptr<graphics::Mesh> tMesh;
-	std::shared_ptr<graphics::Shader> tShader;
+	/* -- Asset Libraries -- */
+	core::AssetLibrary<graphics::VertexArray> VertLib;
+	core::AssetLibrary<graphics::Shader> ShaderLib;
+	core::AssetLibrary<graphics::Texture> TextureLib;
+	core::AssetLibrary<graphics::Material> MaterialLib;
 
-	glm::vec2 rectSize , rectPos;
+	std::shared_ptr<graphics::Camera> camera;
+	glm::vec3 cameraPos;
+	float cameraRotation;
+
+	std::shared_ptr<graphics::VertexArray> VA;
+	std::shared_ptr<graphics::Material> material1;
+	std::shared_ptr<graphics::Material> material2;
 
 	glm::ivec2 winSize;
+	glm::vec2 rectSize , rectPos;
 	glm::vec2 norm;
 	glm::vec2 offset;
 
 	float spd;
 
-	float verticesT[9] = {  -0.5f ,  -0.5f , 0.f , 
-							0.5f , -0.5f , 0.f ,
-							0.f , 0.5f , 0.f };
-	float vertices[12] = {  0.5f ,  0.5f , 0.f , 
-							0.5f , -0.5f , 0.f ,
-							-0.5f , -0.5f , 0.f ,
-							-0.5f ,  0.5f , 0.f };
-	uint32_t elements[6] = { 0 , 3 , 1 , 
-							1 , 3 , 2 };
+	bool imguiEnabled = true;
+	
 	const char* vShader = R"(
 		#version 410 core
 		layout (location = 0) in vec3 position;
 
-		out vec3 vpos;
-
-		uniform vec2 offset = vec2(0.5);
+		uniform mat4 proj = mat4(1.0);
+		uniform mat4 view = mat4(1.0);
 		uniform mat4 model = mat4(1.0);
 		void main() {
-			vpos = position + vec3(offset , 0);
-			gl_Position = model * vec4(position , 1.0);
+			gl_Position = proj * view * model * vec4(position , 1.0);
 		}
 	)";
 	const char* fShader = R"(
 		#version 410 core
-		
-		in vec3 vpos;
 		out vec4 outColor;
 
-		uniform vec3 color = vec3(0.0);
-		uniform float blue = 0.5f;
+		uniform vec4 col = vec4(1.0);
 		void main() {
-			outColor = vec4(vpos.xy , blue , 1.0);
+			outColor = col;
 		}
 	)";
+	const char* vShaderT = R"(
+		#version 410 core
+		layout (location = 0) in vec3 position;
+		layout (location = 1) in vec2 texcoords;
+		out vec2 uvs;
+
+		uniform mat4 proj = mat4(1.0);
+		uniform mat4 view = mat4(1.0);
+		uniform mat4 model = mat4(1.0);
+		void main() {
+			uvs = texcoords;
+			gl_Position = proj * view * model * vec4(position , 1.0);
+		}
+	)";
+	const char* fShaderT = R"(
+		#version 410 core
+		in vec2 uvs;
+		out vec4 outColor;
+
+		uniform sampler2D tex;
+		void main() {
+			outColor = texture(tex , uvs);
+		}
+	)";
+
+	void InitializeLibraries() override {
+		{
+			std::shared_ptr<graphics::VertexArray> va = std::make_shared<graphics::VertexArray>();
+			{
+				MACHY_CREATE_VERTEX_BUFFER(vb , float);
+				vb->pushVertex({  0.5f ,  0.5f , 0.f });
+				vb->pushVertex({  0.5f , -0.5f , 0.f });
+				vb->pushVertex({ -0.5f , -0.5f , 0.f });
+				vb->pushVertex({ -0.5f ,  0.5f , 0.f });
+				vb->setLayout({ 3 });
+				va->pushBuffer(std::move(vb));
+			}
+			va->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
+			va->upload();
+			VertLib.load("Rect" , va);
+		}
+		{
+			std::shared_ptr<graphics::VertexArray> va = std::make_shared<graphics::VertexArray>();
+			{
+				MACHY_CREATE_VERTEX_BUFFER(vb , float);
+				vb->pushVertex({  0.5f ,  0.5f , 0.f });
+				vb->pushVertex({  0.5f , -0.5f , 0.f });
+				vb->pushVertex({ -0.5f , -0.5f , 0.f });
+				vb->pushVertex({ -0.5f ,  0.5f , 0.f });
+				vb->setLayout({ 3 });
+				va->pushBuffer(std::move(vb));
+			}
+			{
+				MACHY_CREATE_VERTEX_BUFFER(vb , short);
+				vb->pushVertex({ 1 , 1 });
+				vb->pushVertex({ 1 , 0 });
+				vb->pushVertex({ 0 , 0 });
+				vb->pushVertex({ 0 , 1 });
+				vb->setLayout({ 2 });
+				va->pushBuffer(std::move(vb));
+			}
+			va->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
+			va->upload();
+			VertLib.load("TexturedRect" , va);
+		}
+		{
+			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader , fShader);
+			ShaderLib.load("Rect" , shader);
+		}
+		{
+			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT , fShaderT);
+			ShaderLib.load("TexturedRect" , shader);
+		}
+		{
+			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/player.png");
+			texture->setTextFilter(graphics::TextureFilter::nearest);
+			TextureLib.load("Player" , texture);
+		}
+		{
+			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/testImages/image3.png");
+			texture->setTextFilter(graphics::TextureFilter::nearest);
+			TextureLib.load("Screenshot 3" , texture);
+		} 
+		{
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Rect"));
+			mat->setUniformValue("col" , glm::vec4(1 , 0 , 0 , 1));
+			MaterialLib.load("Red Material" , mat);
+		}
+		{
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Rect"));
+			mat->setUniformValue("col" , glm::vec4(0 , 1 , 0 , 1));
+			MaterialLib.load("Green Material" , mat);
+		}
+
+		return;
+	}
 	public:
-		Dev() : winSize({0 , 0}) , offset({0.f , 0.f}) , norm({0.f , 0.f}) , spd(0.001f) { }
-		~Dev() { }
+		Dev() : winSize({0 , 0}) , offset({0.f , 0.f}) , norm({0.f , 0.f}) , spd(0.01f) { }
+		~Dev() {}
 
 		virtual core::WindowProperties GetWindowProperties() override { 
 			core::WindowProperties ret;
 
 			ret.guiProps.isDockingEnabled = true;
-			ret.guiProps.isViewportEnabled = true;
+			ret.guiProps.isViewportEnabled = false;
 
-			ret.w = 1420; ret.h = 1020;
+			ret.guiProps.flags |= ImGuiWindowFlags_MenuBar;
+
+			ret.w = 1920; ret.h = 1080;
 			ret.flags |= SDL_WINDOW_RESIZABLE;
-			ret.title = "[Machine Y Development v{1.0.1}]";
+			ret.title = "[Machine Y Development v{1.0.2}]";
 			return ret;
 		}
 
 		virtual void Initialize() override {
-			MACHY_TRACE("Development App Initializing");
+			MACHY_INFO(">>> Initializing Dev App <<<");
+			InitializeLibraries();
+			MACHY_TRACE("Development Assets Loaded"); 
 
-			tMesh = std::make_shared<graphics::Mesh>(vertices , 4 , 3 , elements , 6);
-			tShader = std::make_shared<graphics::Shader>(vShader , fShader);
+			cameraPos = glm::vec3(0.f);
+			cameraRotation = 0.f;
+
+			camera = std::make_shared<graphics::Camera>();
+			camera->setHeight(2.f);
+			camera->setViewMat(cameraPos , cameraRotation);
 
 			rectPos = glm::vec2(0.f);
 			rectSize = glm::vec2(1.f);
+
+			VA = VertLib.get("Rect");
+			material1 = MaterialLib.get("Red Material");
+			material2 = MaterialLib.get("Green Material");
 		}
 
 		virtual void Shutdown() override {}
 
 		virtual void Update() override {
 
-			glm::ivec2 machWindowSize = MachY::Instance().getWindow().getSize();
-			norm.x = (float)input::mouse::X() / (float)machWindowSize.x;
-			norm.y = (float)(machWindowSize.y - input::mouse::Y()) / (float)machWindowSize.y;
-
-			if (input::keyboard::key(MACHY_INPUT_KEY_LEFT) || input::keyboard::key(MACHY_INPUT_KEY_A))  { offset.x -= spd; }
-			if (input::keyboard::key(MACHY_INPUT_KEY_RIGHT) || input::keyboard::key(MACHY_INPUT_KEY_D)) { offset.x += spd; }
-			if (input::keyboard::key(MACHY_INPUT_KEY_UP) || input::keyboard::key(MACHY_INPUT_KEY_W))    { offset.y += spd; }
-			if (input::keyboard::key(MACHY_INPUT_KEY_DOWN) || input::keyboard::key(MACHY_INPUT_KEY_S))  { offset.y -= spd; }
-
-			if (input::joystick::isJoystickAvailable(0)) { 
-				if (input::joystick::getButton(0 , input::joystick::Button::DPAD_Left))  { offset.x -= spd; }
-				if (input::joystick::getButton(0 , input::joystick::Button::DPAD_Right)) { offset.x += spd; }
-				if (input::joystick::getButton(0 , input::joystick::Button::DPAD_Up))    { offset.y += spd; }
-				if (input::joystick::getButton(0 , input::joystick::Button::DPAD_Down))  { offset.y -= spd; }
-
-				float blue = 0.5f;
-				tShader->setUniformFloat("blue" , blue);
+			if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE)) {
+				imguiEnabled = !imguiEnabled;
+				MachY::Instance().getWindow().setRenderToScrn(!imguiEnabled);
 			}
-
-			tShader->setUniformFloat2("offset" , norm.x + offset.x , norm.y + offset.y);
-			
-			glm::mat4 model = glm::mat4(1.f);
-			model = glm::translate(model , { rectPos.x , rectPos.y , 0.f });
-			model = glm::scale(model , {rectSize.x , rectSize.y , 0.f});
-			tShader->setUniformMat4("model" , model);
 
 			return;
 		}
 
 		virtual void Render() override {
-			auto rc = std::make_unique<graphics::rendercommands::RenderMesh>(tMesh , tShader);
-			MachY::Instance().getRM().submit(std::move(rc));
-			MachY::Instance().getRM().flush();
+			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , camera));
+
+			{
+				glm::mat4 model = glm::mat4(1.f);
+				model = glm::translate(model , { rectPos.x , rectPos.y , 0.f });
+				model = glm::scale(model , {rectSize.x , rectSize.y , 0.f});
+				MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , VA , material1 , model));
+			}
+			{
+				glm::mat4 model = glm::mat4(1.f);
+				model = glm::translate(model , { rectPos.x + 2.f , rectPos.y , 0.f });
+				model = glm::scale(model , {rectSize.x , rectSize.y , 0.f});
+				MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , VA , material2 , model));
+			}
+
+			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
 			return;
 		}
 
 		virtual void ImGuiRender() override {
+			if (!imguiEnabled)
+				return;
 			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
-			if (ImGui::Begin("Rect Properties")) {
+			if (ImGui::Begin("Controls")) {
 				ImGui::DragFloat2("Rect Pos" , glm::value_ptr(rectPos) , 0.1f);
 				ImGui::DragFloat2("Rect Size" , glm::value_ptr(rectSize) , 0.1f);
+				ImGui::Separator();
+				float camH = camera->getHeight();
+				ImGui::DragFloat("Camera Height" , &camH , 0.5f);
+				camera->setHeight(camH);
+				glm::vec3 camP = cameraPos;
+				float camR = cameraRotation;
+				ImGui::DragFloat3("Camera Position" , glm::value_ptr(camP) , 0.1f);
+				ImGui::DragFloat("Camera Rotation" , &camR , 1.f);
+				if (camR != cameraRotation || camP != cameraPos) {
+					cameraPos = camP;
+					cameraRotation = camR;
+					camera->setViewMat(cameraPos , cameraRotation);
+				}
+			}
+			ImGui::End();
+
+			if (ImGui::Begin("Asset Libraries")) {
+				ImVec4 datacol(0 , 1 , 0 , 1);
+				ImVec4 errorcol(1 , 0 , 0 , 1);
+				if (ImGui::TreeNode("Texture Library")) {
+					for (const auto& asset : TextureLib.getAllAssets()) {
+						std::string displayName = asset.first + "##AssetLibraries.Texture";
+						if (ImGui::TreeNode(displayName.c_str())) {
+							graphics::Texture* tex = asset.second.get();
+							if (tex) {
+								ImGui::TextColored(datacol , "Use Count -> "); ImGui::SameLine();
+								ImGui::Text("%03d" , (int)asset.second.use_count());
+								ImGui::TextColored(datacol , "Size -> "); ImGui::SameLine();
+								ImGui::Text("%dx%d" , tex->getWidth() , tex->getHeight());
+								ImGui::TextColored(datacol , "Channels -> "); ImGui::SameLine();
+								ImGui::Text("%d" , tex->getID());
+								ImGui::TextColored(datacol , "Path ->"); ImGui::SameLine();
+								ImGui::Text("%s" , tex->getPath().c_str());
+								ImVec2 size {(float)tex->getWidth() , (float)tex->getHeight() };
+								ImGui::Image((void*)(intptr_t)tex->getID() , size , {0 , 1} , {1 , 0});
+							} else {
+								ImGui::TextColored(errorcol , "Invalid Texture {%s}" , asset.first.c_str());
+							}
+							ImGui::TreePop();
+						}
+					}
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Shader Library")) {
+					for (const auto& asset : ShaderLib.getAllAssets()) {
+						std::string displayName = asset.first + "##AssetLibraries.Shader";
+						if (ImGui::TreeNode(displayName.c_str())) {
+							graphics::Shader* shader = asset.second.get();
+							if (shader) {
+								ImGui::TextColored(datacol , "Use Count -> "); ImGui::SameLine();
+								ImGui::Text("%03d" , (int)asset.second.use_count());
+								displayName = "Vertex Shader##AssetLibraries.Shader" + asset.first;
+								if (ImGui::TreeNode(displayName.c_str())) {
+									ImGui::TextWrapped("%s" , shader->getVertShader().c_str());
+									ImGui::TreePop();
+								}
+								displayName = "Fragment Shader##AssetLibraries.Shader" + asset.first;
+								if (ImGui::TreeNode(displayName.c_str())) {
+									ImGui::TextWrapped("%s" , shader->getFragShader().c_str());
+									ImGui::TreePop();
+								}
+							} else {
+								ImGui::TextColored(errorcol , "Invalid Texture {%s}" , asset.first.c_str());
+							}
+							ImGui::TreePop();
+						}
+					}
+					ImGui::TreePop();
+				}
 			}
 			ImGui::End();
 
@@ -150,14 +315,17 @@ class Dev : public App {
 
 				auto& window = MachY::Instance().getWindow();
 
-				ImVec2 size = { 600 , 600 };
-				ImVec2 uv0 = { 0 , 1 };
-				ImVec2 uv1 = { 1 , 0 };
+				ImVec2 winSize = ImGui::GetWindowSize();
+				glm::ivec2 arSize = window.getCorrectAspectRatioSize((int)winSize.x - 15, (int)winSize.y - 35);
+				ImVec2 size = { (float)arSize.x , (float)arSize.y };
+				ImVec2 pos = { (winSize.x - size.x) * 0.5f , ((winSize.y - size.y) * 0.5f) + 7 };
+				ImVec2 uv0  = { 0 , 1 };
+				ImVec2 uv1  = { 1 , 0 };
+				ImGui::SetCursorPos(pos);
 				ImGui::Image((void*)(intptr_t)window.getFrameBuffer()->getTextureID() , size , uv0 , uv1);
 			}
 			ImGui::End();
 
-			ImGui::ShowDemoWindow();
 			return;
 		}
 

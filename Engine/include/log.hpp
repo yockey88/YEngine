@@ -16,6 +16,11 @@
 #define MACHY_BREAK __builtin_trap();
 #endif
 
+#define MACHY_INFO(...) \
+    if (spdlog::get(MACHY_DEFAULT_LOGGER_NAME) != nullptr) { \
+        spdlog::get(MACHY_DEFAULT_LOGGER_NAME)->info(__VA_ARGS__);\
+    }
+
 #ifndef MACHY_CONFIG_RELEASE
 #define MACHY_TRACE(...) \
     if (spdlog::get(MACHY_DEFAULT_LOGGER_NAME) != nullptr) { \
@@ -24,10 +29,6 @@
 #define MACHY_DEBUG(...) \
     if (spdlog::get(MACHY_DEFAULT_LOGGER_NAME) != nullptr) { \
         spdlog::get(MACHY_DEFAULT_LOGGER_NAME)->debug(__VA_ARGS__);\
-    }
-#define MACHY_INFO(...) \
-    if (spdlog::get(MACHY_DEFAULT_LOGGER_NAME) != nullptr) { \
-        spdlog::get(MACHY_DEFAULT_LOGGER_NAME)->info(__VA_ARGS__);\
     }
 #define MACHY_WARN(...) \
     if (spdlog::get(MACHY_ERROR_LOGGER_NAME) != nullptr) { \
@@ -48,10 +49,10 @@
 #define MACHY_TRACE(...) (void)0
 #define MACHY_TRACE(...) (void)0
 #define MACHY_DEBUG(...) (void)0
-#define MACHY_INFO(...) (void)0
 #define MACHY_WARN(...) (void)0
 #define MACHY_ERROR(...) (void)0
 #define MACHY_FATAL(...) (void)0
+#define MACHY_ASSERT(x , msg) (void*)0
 #endif
 
 #endif

@@ -1,5 +1,7 @@
 #include "Graphics/helper.hpp"
 
+#include <iostream>
+
 namespace machy {
 namespace graphics{
 
@@ -17,7 +19,8 @@ namespace graphics{
                 default: errstr = std::to_string(error); break;
             }
 
-            MACHY_ERROR("OpenGL Error -> {}" , errstr.c_str());
+            // MACHY_ERROR("OpenGL Error -> {}" , errstr.c_str());
+            std::cout << "OpenGl Error -> {" << errstr << "}" << std::endl;
             error = glGetError();
         }
         MACHY_ASSERT(!assert , "OpenGl Failure");

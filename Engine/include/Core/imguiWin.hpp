@@ -9,6 +9,7 @@ namespace machy {
 namespace core {
 
 	struct ImguiWindowProperties {
+		ImGuiWindowFlags flags;
 		bool moveFromTitleBarOnly = true;
 		bool isDockingEnabled = false;
 		bool isViewportEnabled = false;

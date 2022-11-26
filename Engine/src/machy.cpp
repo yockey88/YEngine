@@ -33,15 +33,16 @@ namespace machy {
 
         MACHY_ASSERT(!initialized , "Attempting to call MachY::Initialize() more than once");
         if (!initialized) {
-            MACHY_TRACE("[[ SYSTEM BOOTING UP ]]");
-            MACHY_TRACE("[[ INITIALIZING SYSTEM STATE ]]");
+            MACHY_INFO("[[ SYSTEM BOOTING UP ]]");
+			std::cout << std::endl;
+            MACHY_INFO("[[ INITIALIZING SYSTEM STATE ]]");
 
             MACHY_TRACE("Creating Window");
             if (!window.create(ActiveApp->GetWindowProperties())) {
                 MACHY_FATAL("Could Not Create Engine Window");
                 return false;
             }
-            MACHY_INFO("Window Creation Successful");
+            MACHY_TRACE("Window Creation Successful");
             
             MACHY_TRACE("Initializing Render Manager");
             renderer.init();
@@ -50,11 +51,10 @@ namespace machy {
 			input::keyboard::initialize();
 
 			std::cout << std::endl;
-			MACHY_TRACE(">>> WELCOME TO MACHY <<<");
+			MACHY_INFO(">>> WELCOME TO MACHY <<<");
 			getInfo();
 			ActiveApp->Initialize();
-			std::cout << std::endl;
-			
+
 			initialized = true;
 
 			return true;
@@ -109,11 +109,14 @@ namespace machy {
 	*/
 	void MachY::shutdown() {
 
-		MACHY_TRACE("MACHINE SHUTTING DOWN");
+		std::cout << std::endl;
+		MACHY_TRACE(">>> MACHINE SHUTTING DOWN <<<");
 		ActiveApp->Shutdown();
+		delete ActiveApp;
 
 		MACHY_TRACE("Shutting Down Renderer");
 		renderer.shutdown();
+		MACHY_TRACE("Renderer Shut Down Successful");
 
 		MACHY_TRACE("Shutting Down Window");
 		window.shutdown();
@@ -124,7 +127,6 @@ namespace machy {
 		std::cout << "[ MACHINE Y SUCCESSFUL SHUTDOWN ]" << std::endl;
 		std::cout << "[[[ Goodbye ]]]" << std::endl;
 		std::cout << "[[[ $$$ ]]]" << std::endl;
-
 		initialized = false;
 
 		return;
@@ -156,19 +158,15 @@ namespace machy {
 #ifdef MACHY_CONFIG_DEBUG
 		MACHY_INFO("[CONFIG]--> debug");
 #endif
-
-#ifdef MACHY_CONFIIG_RELEASE
+#ifdef MACHY_CONFIG_RELEASE
 		MACHY_INFO("[CONFIG]--> release");
 #endif
-
 #ifdef MACHY_PLATFORM_WINDOWS
 		MACHY_INFO("[Platform]--> windows");
 #endif
-
 #ifdef MACHY_PLATFORM_LINUX
 		MACHY_INFO("[Platform]--> linux");
 #endif
-
 #ifdef MACHY_PLATFORM_MAC
 		MACHY_INFO("[Platform]--> mac");
 #endif

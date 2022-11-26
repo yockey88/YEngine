@@ -1,12 +1,16 @@
 #include "machy.hpp"
 #include "Core/window.hpp"
-#include "Graphics/mesh.hpp"
+#include "Graphics/framebuffer.hpp"
+#include "Graphics/vertex.hpp"
 #include "Graphics/shader.hpp"
+#include "Graphics/helper.hpp"
 #include "Input/mouse.hpp"
 #include "Input/keyboard.hpp"
 #include "Input/joystick.hpp"
 
 #include "glad/glad.h"
+
+#include "glm/gtc/matrix_transform.hpp"
 
 #include <iostream>
 
@@ -14,13 +18,34 @@ namespace machy::core {
 
 	WindowProperties::WindowProperties() {
 		x = SDL_WINDOWPOS_CENTERED; y = x;
-		w = 1620; h = 1220;
-		wMin = 320; hMin = 180;
+		w = 1920; h = 1080;
+		wMin = 1024; hMin = 576;
 		flags = SDL_WINDOW_OPENGL;
+		aspectRatio = 16.f / 9.f;
 		cc.x = static_cast<float>(0x64) / static_cast<float>(0xFF);
 		cc.y = static_cast<float>(0x95) / static_cast<float>(0xFF);
 		cc.z = static_cast<float>(0xED) / static_cast<float>(0xFF);
 		title = "[Machine Y Appless Engine v{1.0.1}]";
+	}
+
+	void Window::initializeScrnRender() {
+
+		vertArray = std::make_shared<graphics::VertexArray>();
+		{
+			MACHY_CREATE_VERTEX_BUFFER(vb , short);
+			vb->pushVertex({  1 ,  1  ,  1 , 1 });
+			vb->pushVertex({  1 , -1  ,  1 , 0 });
+			vb->pushVertex({ -1 , -1  ,  0 , 0 });
+			vb->pushVertex({ -1 ,  1  ,  0 , 1 });
+			vb->setLayout({ 2 , 2 });
+			vertArray->pushBuffer(std::move(vb));
+		}
+		vertArray->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
+		vertArray->upload();
+
+		shader = std::make_shared<graphics::Shader>(vShader , fShader);
+
+		return;
 	}
 
 	/* clear()
@@ -52,7 +77,7 @@ namespace machy::core {
 			case SDL_WINDOWEVENT: 
 				switch (e.window.event) {
 					case SDL_WINDOWEVENT_CLOSE: MachY::Instance().quit(); break;
-
+					case SDL_WINDOWEVENT_RESIZED: handleResize(e.window.data1 , e.window.data2); break;
 					default: break;
 				}
 			break;
@@ -60,6 +85,44 @@ namespace machy::core {
 			case SDL_CONTROLLERDEVICEREMOVED: input::joystick::onJoystickConnected(e.cdevice); break;
 			default: break;
 		}
+
+		return;
+	}
+
+	void Window::renderToScreen() {
+		MACHY_ASSERT(vertArray->isValid() , "Attempting to render with invalis VertexArray -> Did you forget to call upload()?");
+		if (vertArray->isValid()) {
+			glClearColor(0 , 0 , 0 , 1);
+			vertArray->bind();
+			glBindTexture(GL_TEXTURE_2D , frameBuffer->getTextureID()); MACHY_CHECK_GL_ERROR;
+			shader->bind();
+
+			glm::vec2 scale = fBufferSize / (glm::vec2)getSize();
+			glm::mat4 model(1.0);
+			model = glm::scale(model , {scale.x , scale.y , 1.f });
+			shader->setUniformMat4("model" , model);
+			glDrawElements(GL_TRIANGLES , vertArray->getEltCount() , GL_UNSIGNED_INT , 0); MACHY_CHECK_GL_ERROR;
+
+			shader->unbind();
+			glBindTexture(GL_TEXTURE_2D , 0); MACHY_CHECK_GL_ERROR;
+			vertArray->unbind();
+		}
+
+		return;
+	}
+
+	void Window::handleResize(int w , int h) {
+
+		int fBufferWidth = (int)(h * winProps.aspectRatio);
+		int fBufferHeight = (int)(w * (1.f / winProps.aspectRatio));
+
+		if (h >= fBufferHeight) {
+			fBufferHeight = w;
+		} else {
+			fBufferHeight = h;
+		}
+
+		fBufferSize = { fBufferWidth , fBufferHeight };
 
 		return;
 	}
@@ -77,6 +140,8 @@ namespace machy::core {
 		-> filters all SDL and ImGui events into Engine
 	*/
 	bool Window::create(const WindowProperties& props) {
+		winProps = props;
+
 		if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
 			MACHY_FATAL("SDL Initialization Failure -> {}" , SDL_GetError());
 			return false;
@@ -89,7 +154,7 @@ namespace machy::core {
 			return false;
 		}
 
-#ifdef NACHY_PLATFORM_MAC
+#ifdef MACHY_PLATFORM_MAC
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS , SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
 #endif
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK , SDL_GL_CONTEXT_PROFILE_CORE);
@@ -107,14 +172,17 @@ namespace machy::core {
 		}
 		gladLoadGLLoader(SDL_GL_GetProcAddress);
 
+		MACHY_TRACE("Creating GUI");
+		gui.create(props.guiProps);
+			
+		open = true;
+
 		frameBuffer = std::make_shared<graphics::Framebuffer>(props.w , props.h);
 		glm::vec4 cc = { props.cc.r , props.cc.g , props.cc.b , 1.f };
 		frameBuffer->setClearColor(cc);
 
-		MACHY_INFO("Creating Graphical User Interface");
-		gui.create(props.guiProps);
-			
-		open = true;
+		initializeScrnRender();
+		handleResize(props.w , props.h);
 
 		return true;
 	}
@@ -167,7 +235,6 @@ namespace machy::core {
 		-> render gui
 		-> renders app gui
 
-		-> will eventually call render manager to execute all commands
 		-> swaps buffer
 	*/
 	void Window::endRender() {
@@ -175,6 +242,9 @@ namespace machy::core {
 		auto& rm = MachY::Instance().getRM();
 		rm.submit(MACHY_SUBMIT_RENDER_CMND(PopFramebuffer));
 		rm.flush();
+
+		if (renderToScrn) 
+			renderToScreen();
 
 		gui.beginRender();
 		MachY::Instance().getApp().ImGuiRender();
@@ -210,6 +280,21 @@ namespace machy::core {
 		int w , h;
 		SDL_GetWindowSize(window , &w , &h);
 		return glm::ivec2{w , h};
+	}
+
+	glm::ivec2 Window::getCorrectAspectRatioSize(int w , int h) {
+
+		int fBufferWidth = (int)(h * winProps.aspectRatio);
+		int fBufferHeight = (int)(w * (1.f / winProps.aspectRatio));
+
+		if (h >= fBufferHeight) {
+			fBufferHeight = w;
+		} else {
+			fBufferHeight = h;
+		}
+
+		return { fBufferWidth , fBufferHeight };
+
 	}
 
 }

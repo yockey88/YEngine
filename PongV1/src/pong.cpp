@@ -55,15 +55,13 @@ namespace machy {
             virtual core::WindowProperties GetWindowProperties() override {
 
                 core::WindowProperties props;
-                
-                props.flags |= SDL_WINDOW_RESIZABLE;
 
                 props.guiProps.isDockingEnabled = true;
                 props.guiProps.moveFromTitleBarOnly = true;
                 props.guiProps.isViewportEnabled = true;
                 
                 props.w = 1000;
-                props.h = 900;
+                props.h = 800;
 
                 props.title = "Pong V1"; 
 
@@ -72,7 +70,7 @@ namespace machy {
 
             virtual void Initialize() override {
 
-                MACHY_TRACE(">>> Initializing PongV1 <<<");
+                MACHY_INFO(">>> Initializing Pong V1 <<<");
                 paddleL = CreatePaddle({ -1.f , 0.f });
                 paddleR = CreatePaddle({  1.f , 0.f });
                 ball = CreateBall({ 0.f , 0.f });
@@ -80,9 +78,9 @@ namespace machy {
                 leftPaddleUp = MACHY_INPUT_KEY_W; leftPaddleDown = MACHY_INPUT_KEY_S;
                 rightPaddleUp = MACHY_INPUT_KEY_UP; rightPaddleDown = MACHY_INPUT_KEY_DOWN;
 
-                paddleSpd = 0.02f;
-                ballSpd = 0.007f;
-                ball->setVel({ ballSpd , 0.006f });
+                paddleSpd = 0.03f;
+                ballSpd = 0.02f;
+                ball->setVel({ ballSpd , ballSpd });
 
                 ballCollisionLeft = true;
 
@@ -92,7 +90,11 @@ namespace machy {
                 return;
             }
 
-            virtual void Shutdown() override {}
+            virtual void Shutdown() override {
+                ball.reset();
+                paddleL.reset();
+                paddleR.reset();
+            }
 
             virtual void Update() override {
 
@@ -155,10 +157,10 @@ namespace machy {
 
                     auto& window = MachY::Instance().getWindow();
 
-                    ImVec2 size = { 800 , 800 };
+                    ImVec2 size = { 600 , 600 };
                     ImVec2 uv0 = { 0 , 1 };
                     ImVec2 uv1 = { 1 , 0 };
-                    ImGui::Image((void*)(intptr_t)window.getFrameBuffer()->getTextureID() , size , uv0 , uv1);
+                    ImGui::Image((void*)(intptr_t)window.getFrameBuffer().get()->getTextureID() , size , uv0 , uv1);
                 }
                 ImGui::End();
 

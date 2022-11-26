@@ -3,7 +3,7 @@
 
 #include "machy.hpp"
 
-#include "Graphics/mesh.hpp"
+#include "Graphics/vertex.hpp"
 #include "Graphics/shader.hpp"
 #include "Graphics/framebuffer.hpp"
 
@@ -12,16 +12,16 @@
 #include <memory>
 
 class GameObject {
-    std::shared_ptr<machy::graphics::Mesh> mesh;
+    std::shared_ptr<machy::graphics::VertexArray> vertArr;
     std::shared_ptr<machy::graphics::Shader> shader;
 
     glm::vec2 pos;
     glm::vec2 size;
 
     public:
-        GameObject(std::shared_ptr<machy::graphics::Mesh> mesh , std::shared_ptr<machy::graphics::Shader> shader ,
-            const glm::vec2& pos , const glm::vec2& size) 
-            : mesh(mesh) , shader(shader) , pos(pos) , size(size) {}
+        GameObject(std::shared_ptr<machy::graphics::VertexArray> vertArr , std::shared_ptr<machy::graphics::Shader> shader ,
+                    const glm::vec2& pos , const glm::vec2& size) 
+            : vertArr(vertArr) , shader(shader) , pos(pos) , size(size) {}
 
         void setPos(const glm::vec2& pos) { this->pos = pos; }
         void move(const glm::vec2& by) { pos += by; }

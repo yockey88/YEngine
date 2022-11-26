@@ -13,6 +13,7 @@ namespace managers {
 
     void RenderManager::pushFrameBuffer(std::shared_ptr<graphics::Framebuffer> newBuffer) {
 
+        MACHY_ASSERT(newBuffer != nullptr , "FrameBuffer is Null");
         frameBuffers.push(newBuffer);
         glBindFramebuffer(GL_FRAMEBUFFER , newBuffer->getFbo()); MACHY_CHECK_GL_ERROR;
         glm::ivec2 bufferSize = newBuffer->getSize();
@@ -27,12 +28,12 @@ namespace managers {
 
     void RenderManager::popFrameBuffer() {
 
-        MACHY_ASSERT(frameBuffers.size() > 0 , "Render Manager::popFrameBuffer - empty stack");
+        MACHY_ASSERT(frameBuffers.size() > 0 , "Render Manager::popFrameBuffer() - empty stack");
         if (frameBuffers.size() > 0) {
             frameBuffers.pop();
             if (frameBuffers.size() > 0) {
                 auto nextfb = frameBuffers.top();
-                glBindFramebuffer(GL_FRAMEBUFFER , nextfb->getFbo()); MACHY_CHECK_GL_ERROR
+                glBindFramebuffer(GL_FRAMEBUFFER , nextfb->getFbo()); MACHY_CHECK_GL_ERROR;
                 setViewport({0 , 0 , nextfb->getSize().x , nextfb->getSize().y});
             } else {
                 glBindFramebuffer(GL_FRAMEBUFFER , 0); MACHY_CHECK_GL_ERROR;
@@ -43,14 +44,31 @@ namespace managers {
         return;
     }
 
+    void RenderManager::pushCamera(std::shared_ptr<graphics::Camera> newCamera) {
+
+        MACHY_ASSERT(newCamera != nullptr , "Camera is NUll");
+        cameras.push(newCamera);
+
+        return;
+    }
+
+    void RenderManager::popCamera() {
+
+        MACHY_ASSERT(cameras.size() > 0 , "Render Manager::popCamera() - empty stack");
+        if (cameras.size() > 0) {
+            cameras.pop();
+        }
+
+        return;
+    }
+
     RenderManager::RenderManager() {}
 
     void RenderManager::init() {
         MACHY_INFO("[OpenGL Info]\n\t\tVendor-> {}\n\t\tRenderer-> {}\n\t\tVersion-> {}" ,
                     (const char*)glGetString(GL_VENDOR) , 
                     (const char*)glGetString(GL_RENDERER) , 
-                    (const char*)glGetString(GL_VERSION))
-
+                    (const char*)glGetString(GL_VERSION));
         glEnable(GL_DEPTH_TEST); MACHY_CHECK_GL_ERROR;
 		glDepthFunc(GL_LEQUAL); MACHY_CHECK_GL_ERROR;
 

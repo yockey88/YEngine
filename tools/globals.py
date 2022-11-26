@@ -1,16 +1,15 @@
 MAIN_NAME = "MachineY"
 ENGINE_NAME = "Engine"
-DEV_NAME = "MachyDev"
+MAIN_PROJ_NAME = "MachyDev"
 PONG_NAME = "PongV1"
 
 TOOLS_DIR = "tools"
 
 VMAJOR = 1
 VMINOR = 0
-VPATCH = 1
+VPATCH = 2
 
-CONFIG = "debug"
-CONFIGEXE = "Debug"
+
 
 import sys , platform
 PLATFORM = sys.platform
@@ -27,3 +26,18 @@ def IsLinux():
 
 def IsMac():
     return PLATFORM == "darwin"
+
+def ProcessArguments(argv):
+    ret = {}
+    for arg in argv:
+        try:
+            k = arg[0:arg.index("=")]
+            v = arg[arg.index("=")+1:]
+        except:
+            k = arg
+            v = 0
+        ret[k] = v
+    return ret
+
+def GetArgValue(args , name , default):
+    return args[name] if name in args else default

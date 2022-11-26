@@ -12,6 +12,7 @@ namespace graphics {
     class Shader {
         uint32_t programID;
         std::unordered_map<std::string , int> uniformLocations;
+        std::string vShader , fShader;
 
         int getUniformLocation(const std::string& name);
         public:
@@ -31,6 +32,9 @@ namespace graphics {
             void setUniformFloat4(const std::string& name , const glm::vec4& val);
             void setUniformMat3(const std::string& name , const glm::mat3& mat);
             void setUniformMat4(const std::string& name , const glm::mat4& mat);
+
+            inline const std::string& getVertShader() { return vShader; }
+            inline const std::string& getFragShader() { return fShader; }            
     };
 
 }

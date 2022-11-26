@@ -16,14 +16,21 @@ namespace managers {
     class RenderManager {
         friend class graphics::rendercommands::PushFramebuffer;
         friend class graphics::rendercommands::PopFramebuffer;
+        friend class graphics::rendercommands::PushCamera;
+        friend class graphics::rendercommands::PopCamera;
 
         std::queue<std::unique_ptr<graphics::rendercommands::RenderCommand>> renderCmnds;
         std::stack<std::shared_ptr<graphics::Framebuffer>> frameBuffers;
+        std::stack<std::shared_ptr<graphics::Camera>> cameras;
 
         void pushFrameBuffer(std::shared_ptr<graphics::Framebuffer> newBuffer);
-        void popFrameBuffer();
+        void popFrameBuffer(); 
+        void pushCamera(std::shared_ptr<graphics::Camera> newCamera);
+        void popCamera();
         public:
             RenderManager();
+
+            inline graphics::Camera* getActiveCamera() const { return (cameras.size() > 0) ? cameras.top().get() : nullptr; }
 
             void init();
             void shutdown();

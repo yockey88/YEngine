@@ -5,7 +5,7 @@
 #include "Core/window.hpp"
 #include "Managers/logManager.hpp"
 #include "Managers/renderManager.hpp"
-#include "Graphics/mesh.hpp"
+#include "Graphics/vertex.hpp"
 #include "Graphics/shader.hpp"
 
 #include <iostream>
@@ -28,7 +28,7 @@ namespace machy {
 		std::string name;
         std::string version;
 
-		MachY() : ActiveApp(nullptr) , initialized(false), running(false) {}
+		MachY() : ActiveApp(nullptr) , initialized(false), running(false) , name("Machine Y") , version("{1.0.2}") {}
 
 		[[nodiscard]] bool init();
 

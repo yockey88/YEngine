@@ -16,11 +16,11 @@ namespace machy::core {
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
+        
+        io.ConfigWindowsResizeFromEdges = true;
         io.ConfigWindowsMoveFromTitleBarOnly = props.moveFromTitleBarOnly;
-        if (props.isDockingEnabled)
-            io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        if (props.isViewportEnabled)
-            io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+        if (props.isDockingEnabled) io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        if (props.isViewportEnabled) io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
         auto& window = MachY::Instance().getWindow();
         ImGui_ImplSDL2_InitForOpenGL(window.getSDLWindow() , window.getSDL_GLContext());
