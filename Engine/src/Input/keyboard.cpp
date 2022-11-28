@@ -35,7 +35,7 @@ namespace input {
 	bool  keyboard::keyDown(int key) {
 		MACHY_ASSERT(key >= MACHY_INPUT_KEY_FIRST && key <= KeyCount , "Invalid keybaord key");
 		if (key >=  MACHY_INPUT_KEY_FIRST && key < KeyCount) {
-			return keys[key] && !keysLast[key];
+			return (keys[key] && keysLast[key]);
 		}
 		return false;
 	}

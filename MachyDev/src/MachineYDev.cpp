@@ -1,6 +1,7 @@
 #include "machy.hpp"
 #include "app.hpp"
 #include "main.hpp"
+#include "util.hpp"
 
 #include "Core/assetLibrary.hpp"
 
@@ -43,53 +44,8 @@ class Dev : public App {
 	float spd;
 
 	bool imguiEnabled = true;
-	
-	const char* vShader = R"(
-		#version 410 core
-		layout (location = 0) in vec3 position;
 
-		uniform mat4 proj = mat4(1.0);
-		uniform mat4 view = mat4(1.0);
-		uniform mat4 model = mat4(1.0);
-		void main() {
-			gl_Position = proj * view * model * vec4(position , 1.0);
-		}
-	)";
-	const char* fShader = R"(
-		#version 410 core
-		out vec4 outColor;
-
-		uniform vec4 col = vec4(1.0);
-		void main() {
-			outColor = col;
-		}
-	)";
-	const char* vShaderT = R"(
-		#version 410 core
-		layout (location = 0) in vec3 position;
-		layout (location = 1) in vec2 texcoords;
-		out vec2 uvs;
-
-		uniform mat4 proj = mat4(1.0);
-		uniform mat4 view = mat4(1.0);
-		uniform mat4 model = mat4(1.0);
-		void main() {
-			uvs = texcoords;
-			gl_Position = proj * view * model * vec4(position , 1.0);
-		}
-	)";
-	const char* fShaderT = R"(
-		#version 410 core
-		in vec2 uvs;
-		out vec4 outColor;
-
-		uniform sampler2D tex;
-		void main() {
-			outColor = texture(tex , uvs);
-		}
-	)";
-
-	void InitializeLibraries() override {
+	void InitializeLibraries() {
 		{
 			std::shared_ptr<graphics::VertexArray> va = std::make_shared<graphics::VertexArray>();
 			{
@@ -130,11 +86,15 @@ class Dev : public App {
 			VertLib.load("TexturedRect" , va);
 		}
 		{
-			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader , fShader);
+			std::string vShader = util::readShaderFile("resources/shaders/basic_camera_shader.vert");
+			std::string fShader = util::readShaderFile("resources/shaders/basic_camera_shader.frag");
+			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
 			ShaderLib.load("Rect" , shader);
 		}
 		{
-			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT , fShaderT);
+			std::string vShaderT = util::readShaderFile("resources/shaders/basic_camera_shader_texture.vert");
+			std::string fShaderT = util::readShaderFile("resources/shaders/basic_camera_shader_texture.frag");
+			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
 			ShaderLib.load("TexturedRect" , shader);
 		}
 		{
@@ -162,7 +122,7 @@ class Dev : public App {
 	}
 	public:
 		Dev() : winSize({0 , 0}) , offset({0.f , 0.f}) , norm({0.f , 0.f}) , spd(0.01f) { }
-		~Dev() {}
+		~Dev() { }
 
 		virtual core::WindowProperties GetWindowProperties() override { 
 			core::WindowProperties ret;
@@ -172,7 +132,7 @@ class Dev : public App {
 
 			ret.guiProps.flags |= ImGuiWindowFlags_MenuBar;
 
-			ret.w = 1920; ret.h = 1080;
+			ret.w = 2050; ret.h = 1152;
 			ret.flags |= SDL_WINDOW_RESIZABLE;
 			ret.title = "[Machine Y Development v{1.0.2}]";
 			return ret;
@@ -183,7 +143,7 @@ class Dev : public App {
 			InitializeLibraries();
 			MACHY_TRACE("Development Assets Loaded"); 
 
-			cameraPos = glm::vec3(0.f);
+			cameraPos = glm::vec3{ 1.f , 0.f , 0.f };
 			cameraRotation = 0.f;
 
 			camera = std::make_shared<graphics::Camera>();
@@ -202,7 +162,7 @@ class Dev : public App {
 
 		virtual void Update() override {
 
-			if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE)) {
+			if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE) && !imguiEnabled) {
 				imguiEnabled = !imguiEnabled;
 				MachY::Instance().getWindow().setRenderToScrn(!imguiEnabled);
 			}
@@ -235,6 +195,10 @@ class Dev : public App {
 				return;
 			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 			if (ImGui::Begin("Controls")) {
+				if (ImGui::Button("Game View")) { 
+					imguiEnabled = !imguiEnabled;
+					MachY::Instance().getWindow().setRenderToScrn(!imguiEnabled);
+				}
 				ImGui::DragFloat2("Rect Pos" , glm::value_ptr(rectPos) , 0.1f);
 				ImGui::DragFloat2("Rect Size" , glm::value_ptr(rectSize) , 0.1f);
 				ImGui::Separator();
@@ -328,7 +292,6 @@ class Dev : public App {
 
 			return;
 		}
-
 };
 
 machy::App* CreateApp() {

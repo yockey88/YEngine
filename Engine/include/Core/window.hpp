@@ -42,37 +42,14 @@ namespace core {
 		SDL_GLContext glContext;
 		glm::vec2 fBufferSize;
 
-		const char* vShader = R"(
-			#version 410 core
-			layout (location = 0) in vec2 position;
-			layout (location = 1) in vec2 texcoords;
-
-			out vec2 uvs;
-
-			uniform mat4 model = mat4(1.0);
-			void main() {
-				uvs = texcoords;
-				gl_Position = model * vec4(position , 0.0 , 1.0);
-			}
-		)";
-		const char* fShader = R"(
-			#version 410 core
-			in vec2 uvs;
-
-			out vec4 outColor;
-
-			uniform sampler2D tex;
-			void main() {
-				outColor = texture(tex , uvs);
-			}
-		)";
+		std::string vShader , fShader;
 
 		int scrnH , scrnW;
 
 		bool open , renderToScrn;
 
 		void initializeScrnRender();
-		void clear();
+		void clear() {}
 		void handleEvents(SDL_Event &e);
 		void renderToScreen();
 		void handleResize(int width , int height);

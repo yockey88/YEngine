@@ -1,5 +1,10 @@
 #include "machy.hpp"
 #include "log.hpp"
+#include "util.hpp"
+
+#include "Graphics/vertex.hpp"
+#include "Graphics/shader.hpp"
+
 #include "Input/mouse.hpp"
 #include "Input/keyboard.hpp"
 #include "Input/joystick.hpp"
@@ -63,6 +68,26 @@ namespace machy {
 		return false;
 	}
 
+	/* initLibs() 
+		@param--> nothing
+		@return--> void
+
+		-> loads libraries with basic things
+		
+		VA Lib
+		-> has a few basic meshes 
+
+		Shaderlib 
+		-> primitive shapes and basic colors
+
+		TextureLib
+		-> not sure yet, maybe stuff like rock textures and grass and such
+
+		MaterialLib
+		-> also not sure yet 
+	*/
+	void MachY::initLibs() {}
+
 	/* update()
 		@param--> nothing
 		@return--> void
@@ -71,8 +96,6 @@ namespace machy {
 			-- see core::Window::flushEvents() for more (Core/window.hpp)
 
 		-> grabs logs from event data [logs]->[log manager]
-
-		-> takes user input and feeds to <?> scene Manager|app|game </?>
 	*/
 	void MachY::update() {
 		

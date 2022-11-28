@@ -46,6 +46,7 @@ project "Engine"
         "%{prj.name}/src/**.cpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
+        "%{externals.entt}/src/**.hpp",
         "%{externals.glad}**.c",
         "%{externals.glad}**.h",
         "%{externals.glm}/**.hpp",
@@ -56,7 +57,7 @@ project "Engine"
         "%{prj.name}/include",
         "%{externals.sdl2}/include",
         "%{externals.imgui}",
-        "%{externals.entt}/single_include",
+        "%{externals.entt}/src",
         "%{externals.spdlog}/include",
         "%{externals.glad}/include",
         "%{externals.glm}",
@@ -133,6 +134,7 @@ project "MachyDev"
         "%{prj.name}/src/**.cpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
+        "%{externals.entt}/src/**.hpp",
         "%{externals.glm}/**.hpp",
         "%{externals.stb}/*.h"
     }
@@ -142,6 +144,7 @@ project "MachyDev"
         "%{externals.sdl2}/include",
         "%{externals.glad}/include",
         "%{externals.spdlog}/include",
+        "%{externals.entt}/src",
         "%{externals.imgui}",
         "%{externals.glm}",
         "%{externals.stb}"
@@ -227,6 +230,7 @@ project "PongV1"
         "%{prj.name}/src/**.hpp",
         "%{externals.imgui}/*.h",
         "%{externals.imgui}/*.cpp",
+        "%{externals.entt}/src/**.hpp",
         "%{externals.glm}/**.hpp",
         "%{externals.stb}/*.h"
     }
@@ -236,6 +240,7 @@ project "PongV1"
         "Engine/include",
         "%{externals.sdl2}/include",
         "%{externals.glad}/include",
+        "%{externals.entt}/src",
         "%{externals.spdlog}/include",
         "%{externals.imgui}",
         "%{externals.glm}",
@@ -244,9 +249,9 @@ project "PongV1"
 
     flags { "FatalWarnings" }
     
-    --postbuildcommands {
-       -- "python3 " .. path.getabsolute("%{prj.name}") .. "/postBuild.py %{cfg.buildcfg}"
-    --}
+    postbuildcommands {
+       "python3 " .. path.getabsolute("%{prj.name}") .. "/postBuild.py %{cfg.buildcfg}"
+    }
 
     filter { "system:windows" , "configurations:*" }
         systemversion "latest"

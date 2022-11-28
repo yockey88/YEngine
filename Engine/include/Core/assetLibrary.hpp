@@ -40,7 +40,7 @@ namespace core {
 
             std::shared_ptr<T> get(const std::string& name) {
                 if (exists(name)) {
-                    MACHY_INFO("Retrieving Asset -> {}" , name);
+                    MACHY_TRACE("Retrieving Asset -> {}" , name);
                     return assets[name];
                 } else {
                     MACHY_WARN("AssetLibrary::get({}) failed, {} not found" , name , name);

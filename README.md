@@ -1,19 +1,18 @@
 # Engine Y 
-SDL/OpenGL Game Engine for learning purposes
-ImGui windows, menus, etc...
+SDL/OpenGL Game Engine for learning purposes 
 
 ## Built with the help of Progrematic's youtube series
  - [Youtube](https://www.youtube.com/@Progrematic)
  - [GitHub](https://github.com/progrematic)
- - His Game Engine series is easily one of the est tutorials for beginner game devs there is
+ - His Game Engine series is easily one of the best tutorials for beginner game devs there is \
+      so go check him out!
 
 ## To Build
  - Clone Repo
- - From root directory
-    - python3 ./cli.py gensln
-    - python3 ./cli.py buildsln (see build flags for more)
-    - python3 ./cli.py run
- - The Engine builds as a 
+ - From root directory \
+    ``` python3 ./cli.py gensln ``` \
+    ``` python3 ./cli.py buildsln ``` (see build flags for more) \
+    ``` python3 ./cli.py run ``` 
 ### Build Flags
  - buildsln
     - -config=[debug] || [release] 

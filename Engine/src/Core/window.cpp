@@ -1,4 +1,5 @@
 #include "machy.hpp"
+#include "util.hpp"
 #include "Core/window.hpp"
 #include "Graphics/framebuffer.hpp"
 #include "Graphics/vertex.hpp"
@@ -43,18 +44,9 @@ namespace machy::core {
 		vertArray->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
 		vertArray->upload();
 
-		shader = std::make_shared<graphics::Shader>(vShader , fShader);
-
-		return;
-	}
-
-	/* clear()
-		@params--> nothing
-		@return--> void
-
-		-> clears window to custom color (black) 
-	*/
-	void Window::clear() {
+		vShader = util::readShaderFile("resources/shaders/basic_shader.vert");
+		fShader = util::readShaderFile("resources/shaders/basic_shader.frag");
+		shader = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
 
 		return;
 	}
@@ -90,7 +82,7 @@ namespace machy::core {
 	}
 
 	void Window::renderToScreen() {
-		MACHY_ASSERT(vertArray->isValid() , "Attempting to render with invalis VertexArray -> Did you forget to call upload()?");
+		MACHY_ASSERT(vertArray->isValid() , "Attempting to render with invalid VertexArray -> Did you forget to call upload()?");
 		if (vertArray->isValid()) {
 			glClearColor(0 , 0 , 0 , 1);
 			vertArray->bind();

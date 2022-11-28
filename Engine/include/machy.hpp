@@ -2,11 +2,12 @@
 #define MACHY_HPP
 
 #include "app.hpp"
+
 #include "Core/window.hpp"
+#include "Core/assetLibrary.hpp"
+
 #include "Managers/logManager.hpp"
 #include "Managers/renderManager.hpp"
-#include "Graphics/vertex.hpp"
-#include "Graphics/shader.hpp"
 
 #include <iostream>
 #include <chrono>
@@ -23,6 +24,12 @@ namespace machy {
 		managers::LogManager log;
         managers::RenderManager renderer;
 
+		core::AssetLibrary<graphics::VertexArray> VALib;
+		core::AssetLibrary<graphics::Shader> ShaderLib;
+		core::AssetLibrary<graphics::Texture> TextureLib;
+		core::AssetLibrary<graphics::Material> MaterialLib;
+
+
 		bool initialized, running;
 
 		std::string name;
@@ -31,6 +38,7 @@ namespace machy {
 		MachY() : ActiveApp(nullptr) , initialized(false), running(false) , name("Machine Y") , version("{1.0.2}") {}
 
 		[[nodiscard]] bool init();
+		void initLibs();
 
 		void update();
 		void updateInput();
