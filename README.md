@@ -8,9 +8,13 @@ SDL/OpenGL Game Engine for learning purposes
       so go check him out!
 
 ## To Build
- - Clone Repo
- - From root directory \
-    ``` python3 ./cli.py gensln ``` \
-    ``` python3 ./cli.py buildsln -config=[Config] ``` \
-    ``` python3 ./cli.py run -config=[Config] -proj=[ProjName] ``` \
-    ``` python3 ./clip.py mklink -proj=[Projname] ``` 
+ - From Source using built-in python toolchain
+   - Clone Repo
+   - From root directory \
+      ``` python3 ./cli.py gensln ``` \
+      ``` python3 ./cli.py buildsln -config=[Config] ``` \
+      ``` python3 ./cli.py run -config=[Config] -proj=[ProjName] ``` \
+      ``` python3 ./clip.py mklink -proj=[Projname] ``` 
+ - In Windows Visual Studio
+   - open solution in visual studio
+   - build solution
