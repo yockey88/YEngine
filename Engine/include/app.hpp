@@ -4,7 +4,7 @@
 #include "machy.hpp"
 #include "Core/window.hpp"
 
-#include "entt/entt.hpp"
+#include "entt.hpp"
 
 #include <iostream>
 #include <string>

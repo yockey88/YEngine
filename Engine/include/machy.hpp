@@ -37,7 +37,7 @@ namespace machy {
 
 		MachY() : ActiveApp(nullptr) , initialized(false), running(false) , name("Machine Y") , version("{1.0.2}") {}
 
-		[[nodiscard]] bool init();
+		[[nodiscard]] bool init(App* app);
 		void initLibs();
 
 		void update();

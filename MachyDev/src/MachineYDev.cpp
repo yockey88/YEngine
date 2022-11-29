@@ -156,6 +156,7 @@ class Dev : public App {
 			VA = VertLib.get("Rect");
 			material1 = MaterialLib.get("Red Material");
 			material2 = MaterialLib.get("Green Material");
+			std::cout << std::endl;
 		}
 
 		virtual void Shutdown() override {}

@@ -34,10 +34,12 @@ namespace machy {
 			-- moude
 			-- <?> gamepad </?>
 	*/
-	bool MachY::init() {
+	bool MachY::init(App* app) {
 
         MACHY_ASSERT(!initialized , "Attempting to call MachY::Initialize() more than once");
         if (!initialized) {
+			ActiveApp = app;
+
             MACHY_INFO("[[ SYSTEM BOOTING UP ]]");
 			std::cout << std::endl;
             MACHY_INFO("[[ INITIALIZING SYSTEM STATE ]]");
@@ -58,7 +60,7 @@ namespace machy {
 			std::cout << std::endl;
 			MACHY_INFO(">>> WELCOME TO MACHY <<<");
 			getInfo();
-			ActiveApp->Initialize();
+			app->Initialize();
 
 			initialized = true;
 
@@ -208,12 +210,10 @@ namespace machy {
 	*/
 	void MachY::run(App* app) {
 		log.init();
-		MACHY_ASSERT(app != nullptr , "Attempting to call Engine::Run() with more than one app");
+		MACHY_ASSERT(app != nullptr , "Attempting to call Engine::Run() with invalid app");
 		if (app == nullptr) return;
 
-		ActiveApp = app;
-
-		if (init()) {
+		if (init(app)) {
 			
 			running = true;
 
