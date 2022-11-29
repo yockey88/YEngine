@@ -65,7 +65,7 @@ namespace managers {
     RenderManager::RenderManager() {}
 
     void RenderManager::init() {
-        MACHY_INFO("[OpenGL Info]\n\t\tVendor-> {}\n\t\tRenderer-> {}\n\t\tVersion-> {}" ,
+        MACHY_INFO("[Rendering Device]\n\t\tVendor-> {}\n\t\tRenderer-> {}\n\t\tVersion-> {}" ,
                     (const char*)glGetString(GL_VENDOR) , 
                     (const char*)glGetString(GL_RENDERER) , 
                     (const char*)glGetString(GL_VERSION));

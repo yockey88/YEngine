@@ -11,12 +11,6 @@ SDL/OpenGL Game Engine for learning purposes
  - Clone Repo
  - From root directory \
     ``` python3 ./cli.py gensln ``` \
-    ``` python3 ./cli.py buildsln ``` (see build flags for more) \
-    ``` python3 ./cli.py run ``` 
-### Build Flags
- - buildsln
-    - -config=[debug] || [release] 
- - run 
-    - -config=[debug] || [release]
-    - -proj=[MachyDev] || [PongV1] 
-        - for running your own project from this flag you will need to edit the run.py file located in the 'tools' directory.
+    ``` python3 ./cli.py buildsln -config=[Config] ``` \
+    ``` python3 ./cli.py run -config=[Config] -proj=[ProjName] ``` \
+    ``` python3 ./clip.py mklink -proj=[Projname] ``` 
