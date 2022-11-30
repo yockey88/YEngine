@@ -3,6 +3,8 @@
 #include "main.hpp"
 #include "util.hpp"
 
+#include "entComps/components.hpp"
+
 #include "Core/assetLibrary.hpp"
 
 #include "Graphics/vertex.hpp"
@@ -28,6 +30,9 @@ using namespace machy;
 
 class Dev : public App {
 	/* -- Asset Libraries -- */
+	PlayerCore playerCore;
+	SceneCore sceneCore;
+
 	core::AssetLibrary<graphics::VertexArray> VertLib;
 	core::AssetLibrary<graphics::Shader> ShaderLib;
 	core::AssetLibrary<graphics::Texture> TextureLib;
@@ -37,49 +42,62 @@ class Dev : public App {
 	glm::vec3 cameraPos;
 	float cameraRotation;
 
-	std::shared_ptr<graphics::VertexArray> VA;
-	std::shared_ptr<graphics::Material> sceneMat;
-	std::shared_ptr<graphics::Material> playerMat;
-
-	std::shared_ptr<graphics::Animation2D> activeAnimation;
-	std::shared_ptr<graphics::Animation2D> playerIdle;
-	std::shared_ptr<graphics::Animation2D> playerRun;
-
-	glm::ivec2 winSize;
-
 	glm::vec2 sceneSize , scenePos;
-
-	glm::vec2 playerPos;
-
-	float playerSpd;
-
-	float spd;
 
 	bool imguiEnabled = true;
 
 	void checkPlayerInputs() {
 
-		if (input::keyboard::keyDown(MACHY_INPUT_KEY_W)) {
-			playerPos.y += playerSpd;
-			activeAnimation = playerRun;
-		}
 		if (input::keyboard::keyDown(MACHY_INPUT_KEY_A)) {
-			playerPos.x -= playerSpd;
-			activeAnimation = playerRun;
-		}
-		if (input::keyboard::keyDown(MACHY_INPUT_KEY_S)) {
-			playerPos.y -= playerSpd;
-			activeAnimation = playerRun;
+			playerCore.playerPos.x -= playerCore.playerSpd;
+			playerCore.activeAnimation = playerCore.playerRunL;
+			playerCore.dir = direction::left;
 		}
 		if (input::keyboard::keyDown(MACHY_INPUT_KEY_D)) {
-			playerPos.x += playerSpd;
-			activeAnimation = playerRun;
+			playerCore.playerPos.x += playerCore.playerSpd;
+			playerCore.activeAnimation = playerCore.playerRunR;
+			playerCore.dir = direction::right;
 		}
 
-		if (input::keyboard::keyUp(MACHY_INPUT_KEY_W)) { activeAnimation = playerIdle; }
-		if (input::keyboard::keyUp(MACHY_INPUT_KEY_A)) { activeAnimation = playerIdle; }
-		if (input::keyboard::keyUp(MACHY_INPUT_KEY_S)) { activeAnimation = playerIdle; }
-		if (input::keyboard::keyUp(MACHY_INPUT_KEY_D)) { activeAnimation = playerIdle; }
+		if (input::keyboard::keyDown(MACHY_INPUT_KEY_W)) { 
+			playerCore.playerPos.y += playerCore.playerSpd; 
+			if (playerCore.dir == direction::left) {
+				playerCore.activeAnimation = playerCore.playerRunL;
+			} else {
+				playerCore.activeAnimation = playerCore.playerRunR;
+			}
+		}
+		if (input::keyboard::keyDown(MACHY_INPUT_KEY_S)) {
+			playerCore.playerPos.y -= playerCore.playerSpd;
+			if (playerCore.dir == direction::left) {
+				playerCore.activeAnimation = playerCore.playerRunL;
+			} else {
+				playerCore.activeAnimation = playerCore.playerRunR;
+			}
+		}
+
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_A)) { playerCore.activeAnimation = playerCore.playerIdleL; }
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_D)) { playerCore.activeAnimation = playerCore.playerIdleR; }
+
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_W)) {
+			if (playerCore.dir == direction::left) {
+				playerCore.activeAnimation = playerCore.playerIdleL;
+			} else {
+				playerCore.activeAnimation = playerCore.playerIdleR;
+			}
+		}
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_S)) {
+			if (playerCore.dir == direction::left) {
+				playerCore.activeAnimation = playerCore.playerIdleL;
+			} else {
+				playerCore.activeAnimation = playerCore.playerIdleR;
+			}
+		}
+
+		playerCore.playerIdleL->setAnimationPos(playerCore.playerPos);
+		playerCore.playerIdleR->setAnimationPos(playerCore.playerPos);
+		playerCore.playerRunL->setAnimationPos(playerCore.playerPos);
+		playerCore.playerRunR->setAnimationPos(playerCore.playerPos);
 
 		return;
 	}
@@ -87,23 +105,72 @@ class Dev : public App {
 	void initPlayerAnimations() {
 
 		glm::ivec2 frameLayout{ 6 , 5 };
-		playerIdle = std::make_shared<graphics::Animation2D>(playerMat , frameLayout);
-		playerIdle->addFrameToAnimation({ 1 , 5 });
-		playerIdle->addFrameToAnimation({ 2 , 5 });
-		playerIdle->addFrameToAnimation({ 3 , 5 });
-		playerIdle->addFrameToAnimation({ 4 , 5 });
-		playerIdle->addFrameToAnimation({ 5 , 5 });
-		playerIdle->addFrameToAnimation({ 6 , 5 });
-		playerIdle->setAnimationPos({ 0.f , 0.f });
 
-		playerRun = std::make_shared<graphics::Animation2D>(playerMat , frameLayout);
-		playerRun->addFrameToAnimation({ 1 , 4 });
-		playerRun->addFrameToAnimation({ 2 , 4 });
-		playerRun->addFrameToAnimation({ 3 , 4 });
-		playerRun->addFrameToAnimation({ 4 , 4 });
-		playerRun->addFrameToAnimation({ 5 , 4 });
-		playerRun->addFrameToAnimation({ 6 , 4 });
-		playerRun->setAnimationPos({ 0.f , 0.f });
+		playerCore.playerIdleL = std::make_shared<graphics::Animation2D>(MaterialLib.get("PlayerLMat") , frameLayout);
+		playerCore.playerIdleL->addFrameToAnimation({ 6 , 5 });
+		playerCore.playerIdleL->addFrameToAnimation({ 5 , 5 });
+		playerCore.playerIdleL->addFrameToAnimation({ 4 , 5 });
+		playerCore.playerIdleL->addFrameToAnimation({ 3 , 5 });
+		playerCore.playerIdleL->addFrameToAnimation({ 2 , 5 });
+		playerCore.playerIdleL->addFrameToAnimation({ 1 , 5 });
+		playerCore.playerIdleL->setAnimationPos({ 0.f , 0.f });
+
+		playerCore.playerIdleR = std::make_shared<graphics::Animation2D>(MaterialLib.get("PlayerRMat") , frameLayout);
+		playerCore.playerIdleR->addFrameToAnimation({ 1 , 5 });
+		playerCore.playerIdleR->addFrameToAnimation({ 2 , 5 });
+		playerCore.playerIdleR->addFrameToAnimation({ 3 , 5 });
+		playerCore.playerIdleR->addFrameToAnimation({ 4 , 5 });
+		playerCore.playerIdleR->addFrameToAnimation({ 5 , 5 });
+		playerCore.playerIdleR->addFrameToAnimation({ 6 , 5 });
+		playerCore.playerIdleR->setAnimationPos({ 0.f , 0.f });
+		
+		playerCore.playerRunL = std::make_shared<graphics::Animation2D>(MaterialLib.get("PlayerLMat") , frameLayout);
+		playerCore.playerRunL->addFrameToAnimation({ 6 , 4 });
+		playerCore.playerRunL->addFrameToAnimation({ 5 , 4 });
+		playerCore.playerRunL->addFrameToAnimation({ 4 , 4 });
+		playerCore.playerRunL->addFrameToAnimation({ 3 , 4 });
+		playerCore.playerRunL->addFrameToAnimation({ 2 , 4 });
+		playerCore.playerRunL->addFrameToAnimation({ 1 , 4 });
+		playerCore.playerRunL->setAnimationPos({ 0.f , 0.f });
+		
+		playerCore.playerRunR = std::make_shared<graphics::Animation2D>(MaterialLib.get("PlayerRMat") , frameLayout);
+		playerCore.playerRunR->addFrameToAnimation({ 1 , 4 });
+		playerCore.playerRunR->addFrameToAnimation({ 2 , 4 });
+		playerCore.playerRunR->addFrameToAnimation({ 3 , 4 });
+		playerCore.playerRunR->addFrameToAnimation({ 4 , 4 });
+		playerCore.playerRunR->addFrameToAnimation({ 5 , 4 });
+		playerCore.playerRunR->addFrameToAnimation({ 6 , 4 });
+		playerCore.playerRunR->setAnimationPos({ 0.f , 0.f });
+
+		return;
+	}
+
+	void initScene() {
+		
+		glm::ivec2 grassSize{ 231 , 143 };
+		glm::ivec2 grassPos{ 0 , 0 };
+		sceneCore.worldMap = std::make_shared<graphics::SpriteAtlas2D>(MaterialLib.get("GrassMat"));
+
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(0)->setPos({ 0.f , 0.f });
+
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(1)->setPos({ 0.f , -0.5f });
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(2)->setPos({ 0.f , 0.5f });
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(3)->setPos({ 0.f , -1.f });
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(4)->setPos({ 0.f , 1.f });
+
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(5)->setPos({ -0.5f , 0.f });
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(6)->setPos({ 0.5f , -0.f });
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(7)->setPos({ -1.f , 0.f });
+		sceneCore.worldMap->createSprite(grassSize , grassPos);
+		sceneCore.worldMap->getSprite(8)->setPos({ 1.f , -0.f });
 
 		return;
 	}
@@ -155,9 +222,20 @@ class Dev : public App {
 			ShaderLib.load("Texture" , shader);
 		}
 		{
-			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/player.png");
+			std::string vShaderT = util::readShaderFile("resources/shaders/camera_color_texture.vert");
+			std::string fShaderT = util::readShaderFile("resources/shaders/camera_color_texture.frag");
+			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
+			ShaderLib.load("ColorTexture" , shader);
+		}
+		{
+			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/playerL.png");
 			texture->setTextFilter(graphics::TextureFilter::nearest);
-			TextureLib.load("Player" , texture);
+			TextureLib.load("PlayerL" , texture);
+		}
+		{
+			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/playerR.png");
+			texture->setTextFilter(graphics::TextureFilter::nearest);
+			TextureLib.load("PlayerR" , texture);
 		}
 		{
 			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/objects/objects.png");
@@ -165,12 +243,25 @@ class Dev : public App {
 			TextureLib.load("Objects" , texture);
 		}
 		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Texture") , TextureLib.get("Player"));
-			MaterialLib.load("PlayerMat" , mat);
+			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/tilesets/TD_TilesetGrass.png");
+			texture->setTextFilter(graphics::TextureFilter::nearest);
+			TextureLib.load("Grass" , texture);
 		}
 		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Texture") , TextureLib.get("Objects"));
-			MaterialLib.load("ObjectMat" , mat);
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Texture") , TextureLib.get("PlayerL"));
+			MaterialLib.load("PlayerLMat" , mat);
+		}
+		{
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Texture") , TextureLib.get("PlayerR"));
+			MaterialLib.load("PlayerRMat" , mat);
+		}
+		{
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("ColorTexture") , TextureLib.get("Objects"));
+			MaterialLib.load("SceneMat" , mat);
+		}
+		{
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("ColorTexture") , TextureLib.get("Grass"));
+			MaterialLib.load("GrassMat" , mat);
 		}
 
 		return;
@@ -265,7 +356,7 @@ class Dev : public App {
 		return;
 	}
 	public:
-		Dev() : winSize({0 , 0}) , spd(0.01f) { }
+		Dev() { }
 		~Dev() { }
 
 		virtual core::WindowProperties GetWindowProperties() override { 
@@ -289,14 +380,13 @@ class Dev : public App {
 			MACHY_TRACE("Development Assets Loaded"); 
 			std::cout << "\n";
 
-			VA = VertLib.get("TexturedMesh");
-			playerMat = MaterialLib.get("PlayerMat");
-			sceneMat = MaterialLib.get("ObjectMat");
+			initScene();
 
-			playerPos = glm::vec2{ 0.f , 0.f };
-			playerSpd = 0.003f;
+			playerCore.playerPos = glm::vec2{ 0.f , 0.f };
+			playerCore.playerSpd = 0.003f;
 			initPlayerAnimations();
-			activeAnimation = playerIdle;
+			playerCore.activeAnimation = playerCore.playerIdleR;
+			playerCore.dir = direction::right;
 
 			cameraPos = glm::vec3{ 0.f , 0.f , 0.f };
 			cameraRotation = 0.f;
@@ -322,10 +412,7 @@ class Dev : public App {
 
 			checkPlayerInputs();
 
-			playerIdle->setAnimationPos(playerPos);
-			playerRun->setAnimationPos(playerPos);
-
-			activeAnimation->update();
+			playerCore.activeAnimation->update();
 
 			return;
 		}
@@ -333,13 +420,9 @@ class Dev : public App {
 		virtual void Render() override {
 			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , camera));
 
-			{
-				glm::mat4 model = glm::mat4(1.f);
-				model = glm::translate(model , { scenePos.x , scenePos.y , 0.f });
-				model = glm::scale(model , { sceneSize.x , sceneSize.y , 0.f});
-				MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , VA , sceneMat , model));
-			}
-			activeAnimation->render();
+			sceneCore.render();
+
+			playerCore.activeAnimation->render();
 
 			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
 

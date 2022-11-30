@@ -24,8 +24,9 @@ namespace graphics {
 
             void render();
 
-            void setPos(const glm::vec2& pos) { gamePos = pos; }
+            inline void setPos(const glm::vec2& pos) { gamePos = pos; }
             inline void setID(const int& ID) { this->ID = ID; }
+            inline void setSize(const glm::vec2& size) { this->size = size; }
 
             void moveUD(const float& by) { gamePos.y += by; }
             void moveLR(const float& by) { gamePos.x += by; }

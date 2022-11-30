@@ -26,7 +26,7 @@ namespace graphics {
         core::Timer timer;
 
         glm::vec2 frameSize;
-        glm::ivec2 frameLayout; 
+        glm::ivec2 frameSizePixels , frameLayout; 
 
         uint32_t tWidth , tHeight;
         int currentFrame;

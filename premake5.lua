@@ -10,11 +10,6 @@ workspace "MachineY"
     tdir = "bin/%{cfg.buildcfg}/%{prj.name}"
     odir = "bin-obj/%{cfg.buildcfg}/%{prj.name}"
 
-    -- IDK what these are for but here they are
-    mainpaths = {}
-    mainpaths["MachyDev"] = "C:\\Yock/Projects/GitHub/YEngine/MachyDev"
-    mainpaths["Engine"] = "C:\\Yock/Projects/GitHub/YEngine/Engine"
-
     -- External Dependencies
     externals = {}
     externals["sdl2"] = "external/SDL2-2.24.2"

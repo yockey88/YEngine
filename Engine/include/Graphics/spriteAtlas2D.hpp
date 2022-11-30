@@ -23,7 +23,7 @@ namespace graphics {
         public:
             SpriteAtlas2D(std::shared_ptr<Material> material);
 
-            void createSprite(const glm::vec2& size , const glm::vec2& posInTexr);
+            void createSprite(const glm::ivec2& size , const glm::ivec2& posOfURInTexr);
 
             inline int getNumSprites() const { return numTotalSprites; }
 

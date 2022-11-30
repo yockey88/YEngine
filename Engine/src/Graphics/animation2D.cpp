@@ -12,8 +12,8 @@ namespace graphics {
         float pW = ((float)tWidth / (float)frameLayout.x);
         float pH = ((float)tHeight / (float)frameLayout.y);
 
-        frameSize.x = (pW / tWidth);
-        frameSize.y = (pH / tHeight);
+        frameSize.x = (pW / tWidth) - 0.002f;
+        frameSize.y = (pH / tHeight) - 0.002f;
 
         return;
     }

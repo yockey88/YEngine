@@ -24,13 +24,15 @@ namespace graphics {
         bounds = glm::vec4{ left , right , top , bottom };
 
         VA = std::make_shared<VertexArray>();
-        MACHY_CREATE_VERTEX_BUFFER(vb , float);
-        vb->pushVertex({  0.5f ,  0.5f , 0.f , right , top });
-        vb->pushVertex({  0.5f , -0.5f , 0.f , right , bottom });
-        vb->pushVertex({ -0.5f , -0.5f , 0.f , left  , bottom });
-        vb->pushVertex({ -0.5f ,  0.5f , 0.f , left  , top });
-        vb->setLayout({ 3 , 2 });
-        VA->pushBuffer(std::move(vb));
+        {
+            MACHY_CREATE_VERTEX_BUFFER(vb , float);
+            vb->pushVertex({  0.5f ,  0.5f , 0.f , right , top });
+            vb->pushVertex({  0.5f , -0.5f , 0.f , right , bottom });
+            vb->pushVertex({ -0.5f , -0.5f , 0.f , left  , bottom });
+            vb->pushVertex({ -0.5f ,  0.5f , 0.f , left  , top });
+            vb->setLayout({ 3 , 2 });
+            VA->pushBuffer(std::move(vb));
+        }
         VA->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
         VA->upload();
     }   
