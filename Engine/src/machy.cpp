@@ -41,7 +41,7 @@ namespace machy {
 			ActiveApp = app;
 
             MACHY_INFO("[[ SYSTEM BOOTING UP ]]");
-			std::cout << std::endl;
+			std::cout << "\n";
             MACHY_INFO("[[ INITIALIZING SYSTEM STATE ]]");
 
             MACHY_TRACE("Creating Window");
@@ -57,7 +57,7 @@ namespace machy {
 			input::mouse::initialize();
 			input::keyboard::initialize();
 
-			std::cout << std::endl;
+			std::cout << "\n";
 			MACHY_INFO(">>> WELCOME TO MACHY <<<");
 			getInfo();
 			app->Initialize();
@@ -134,7 +134,7 @@ namespace machy {
 	*/
 	void MachY::shutdown() {
 
-		std::cout << std::endl;
+		std::cout << "\n";
 		MACHY_TRACE(">>> MACHINE SHUTTING DOWN <<<");
 		ActiveApp->Shutdown();
 		delete ActiveApp;

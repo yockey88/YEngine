@@ -6,6 +6,7 @@
 #include "Graphics/shader.hpp"
 #include "Graphics/texture.hpp"
 #include "Graphics/material.hpp"
+#include "Graphics/sprite2D.hpp"
 
 #include "glad/glad.h"
 
@@ -134,7 +135,6 @@ namespace rendercommands {
         } else {
             MACHY_WARN("Attempting to Render a Texture Vertex Array that has Invalid Data");
         }
-
 
         return;
 

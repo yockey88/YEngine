@@ -6,18 +6,18 @@
 namespace machy {
 namespace core {
 
-    class DeltaTime {
-        std::chrono::high_resolution_clock mClock;
+    class Timer {
+        std::chrono::time_point<std::chrono::steady_clock> startTime , now , lastTime;
+        float deltaTime;
+
         public:
-            DeltaTime();
+            Timer() : deltaTime(0) {}
 
             void start();
-            void stop();
 
             void step();
 
-            inline std::chrono::high_resolution_clock getClock() const { return mClock; }
-            
+            inline float getDelta() const { return deltaTime; }
     };
 
 }

@@ -14,6 +14,8 @@ namespace util {
 
         MACHY_ASSERT(shader.is_open() , "Using Nonexistent Shader Paths");
 
+        MACHY_TRACE("Loading Shader Program -> {}" , path);
+
         while (!shader.eof()) {
             getline(shader , line);
             hold += line + '\n';

@@ -14,6 +14,7 @@ namespace graphics {
     class Texture;
     class Framebuffer;
     class Material;
+    class Sprite2D;
 
 namespace rendercommands {
 

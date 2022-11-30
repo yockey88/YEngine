@@ -11,6 +11,9 @@
 #include "Graphics/material.hpp"
 #include "Graphics/framebuffer.hpp"
 #include "Graphics/camera.hpp"
+#include "Graphics/animation2D.hpp"
+#include "Graphics/spriteAtlas2D.hpp"
+#include "Graphics/sprite2D.hpp"
 
 #include "Input/mouse.hpp"
 #include "Input/keyboard.hpp"
@@ -38,15 +41,72 @@ class Dev : public App {
 	std::shared_ptr<graphics::Material> sceneMat;
 	std::shared_ptr<graphics::Material> playerMat;
 
+	std::shared_ptr<graphics::Animation2D> activeAnimation;
+	std::shared_ptr<graphics::Animation2D> playerIdle;
+	std::shared_ptr<graphics::Animation2D> playerRun;
+
 	glm::ivec2 winSize;
+
 	glm::vec2 sceneSize , scenePos;
-	glm::vec2 playerSize , playerPos;
-	glm::vec2 norm;
-	glm::vec2 offset;
+
+	glm::vec2 playerPos;
+
+	float playerSpd;
 
 	float spd;
 
 	bool imguiEnabled = true;
+
+	void checkPlayerInputs() {
+
+		if (input::keyboard::keyDown(MACHY_INPUT_KEY_W)) {
+			playerPos.y += playerSpd;
+			activeAnimation = playerRun;
+		}
+		if (input::keyboard::keyDown(MACHY_INPUT_KEY_A)) {
+			playerPos.x -= playerSpd;
+			activeAnimation = playerRun;
+		}
+		if (input::keyboard::keyDown(MACHY_INPUT_KEY_S)) {
+			playerPos.y -= playerSpd;
+			activeAnimation = playerRun;
+		}
+		if (input::keyboard::keyDown(MACHY_INPUT_KEY_D)) {
+			playerPos.x += playerSpd;
+			activeAnimation = playerRun;
+		}
+
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_W)) { activeAnimation = playerIdle; }
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_A)) { activeAnimation = playerIdle; }
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_S)) { activeAnimation = playerIdle; }
+		if (input::keyboard::keyUp(MACHY_INPUT_KEY_D)) { activeAnimation = playerIdle; }
+
+		return;
+	}
+
+	void initPlayerAnimations() {
+
+		glm::ivec2 frameLayout{ 6 , 5 };
+		playerIdle = std::make_shared<graphics::Animation2D>(playerMat , frameLayout);
+		playerIdle->addFrameToAnimation({ 1 , 5 });
+		playerIdle->addFrameToAnimation({ 2 , 5 });
+		playerIdle->addFrameToAnimation({ 3 , 5 });
+		playerIdle->addFrameToAnimation({ 4 , 5 });
+		playerIdle->addFrameToAnimation({ 5 , 5 });
+		playerIdle->addFrameToAnimation({ 6 , 5 });
+		playerIdle->setAnimationPos({ 0.f , 0.f });
+
+		playerRun = std::make_shared<graphics::Animation2D>(playerMat , frameLayout);
+		playerRun->addFrameToAnimation({ 1 , 4 });
+		playerRun->addFrameToAnimation({ 2 , 4 });
+		playerRun->addFrameToAnimation({ 3 , 4 });
+		playerRun->addFrameToAnimation({ 4 , 4 });
+		playerRun->addFrameToAnimation({ 5 , 4 });
+		playerRun->addFrameToAnimation({ 6 , 4 });
+		playerRun->setAnimationPos({ 0.f , 0.f });
+
+		return;
+	}
 
 	void InitializeLibraries() {
 		{
@@ -89,25 +149,10 @@ class Dev : public App {
 			VertLib.load("TexturedMesh" , va);
 		}
 		{
-			std::string vShader = util::readShaderFile("resources/shaders/basic_shader.vert");
-			std::string fShader = util::readShaderFile("resources/shaders/basic_shader.frag");
-			std::shared_ptr<graphics::Shader> shader1 = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
-			ShaderLib.load("BasicShader" , shader1);
-			std::string fShaderCircle = util::readShaderFile("resources/shaders/basic_circle.frag");
-			std::shared_ptr<graphics::Shader> shader2 = std::make_shared<graphics::Shader>(vShader.c_str() , fShaderCircle.c_str());
-			ShaderLib.load("CircleShader" , shader2);
-		}
-		{
-			std::string vShader = util::readShaderFile("resources/shaders/basic_camera_shader.vert");
-			std::string fShader = util::readShaderFile("resources/shaders/basic_camera_shader.frag");
-			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
-			ShaderLib.load("BasicCameraShader" , shader);
-		}
-		{
-			std::string vShaderT = util::readShaderFile("resources/shaders/basic_camera_shader_texture.vert");
-			std::string fShaderT = util::readShaderFile("resources/shaders/basic_camera_shader_texture.frag");
+			std::string vShaderT = util::readShaderFile("resources/shaders/camera_texture.vert");
+			std::string fShaderT = util::readShaderFile("resources/shaders/camera_texture.frag");
 			std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
-			ShaderLib.load("BasicCameraTextureShader" , shader);
+			ShaderLib.load("Texture" , shader);
 		}
 		{
 			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/player.png");
@@ -118,30 +163,13 @@ class Dev : public App {
 			std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/objects/objects.png");
 			texture->setTextFilter(graphics::TextureFilter::nearest);
 			TextureLib.load("Objects" , texture);
-		} 
-		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("BasicCameraShader"));
-			mat->setUniformValue("col" , glm::vec4(1 , 0 , 0 , 1));
-			MaterialLib.load("RedMat" , mat);
 		}
 		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("BasicCameraShader"));
-			mat->setUniformValue("col" , glm::vec4(0 , 1 , 0 , 1));
-			MaterialLib.load("GreenMat" , mat);
-		}
-		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("BasicCameraShader"));
-			mat->setUniformValue("col" , glm::vec4(0 , 0 , 1 , 1));
-			MaterialLib.load("BlueMat" , mat);
-		}
-		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("BasicCameraTextureShader") , TextureLib.get("Player"));
-			mat->setUniformValue("col" , glm::vec4(1 , 0 , 0 , 1));
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Texture") , TextureLib.get("Player"));
 			MaterialLib.load("PlayerMat" , mat);
 		}
 		{
-			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("BasicCameraTextureShader") , TextureLib.get("Objects"));
-			mat->setUniformValue("col" , glm::vec4(0 , 1 , 0 , 1));
+			std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(ShaderLib.get("Texture") , TextureLib.get("Objects"));
 			MaterialLib.load("ObjectMat" , mat);
 		}
 
@@ -150,6 +178,7 @@ class Dev : public App {
 
 	void ImGuiRenderControls() {
 		if (ImGui::Begin("Controls")) {
+
 			if (ImGui::Button("Game View")) { 
 				imguiEnabled = !imguiEnabled;
 				MachY::Instance().getWindow().setRenderToScrn(!imguiEnabled);
@@ -236,7 +265,7 @@ class Dev : public App {
 		return;
 	}
 	public:
-		Dev() : winSize({0 , 0}) , offset({0.f , 0.f}) , norm({0.f , 0.f}) , spd(0.01f) { }
+		Dev() : winSize({0 , 0}) , spd(0.01f) { }
 		~Dev() { }
 
 		virtual core::WindowProperties GetWindowProperties() override { 
@@ -254,10 +283,20 @@ class Dev : public App {
 		}
 
 		virtual void Initialize() override {
+
 			MACHY_INFO(">>> Initializing Dev App <<<");
 			InitializeLibraries();
 			MACHY_TRACE("Development Assets Loaded"); 
-			std::cout << std::endl;
+			std::cout << "\n";
+
+			VA = VertLib.get("TexturedMesh");
+			playerMat = MaterialLib.get("PlayerMat");
+			sceneMat = MaterialLib.get("ObjectMat");
+
+			playerPos = glm::vec2{ 0.f , 0.f };
+			playerSpd = 0.003f;
+			initPlayerAnimations();
+			activeAnimation = playerIdle;
 
 			cameraPos = glm::vec3{ 0.f , 0.f , 0.f };
 			cameraRotation = 0.f;
@@ -269,13 +308,7 @@ class Dev : public App {
 			scenePos = glm::vec2(0.f);
 			sceneSize = glm::vec2(1.f);
 
-			playerPos = glm::vec2(1.f , 0.f);
-			playerSize = glm::vec2(1.f);
-
-			VA = VertLib.get("TexturedMesh");
-			sceneMat = MaterialLib.get("ObjectMat");
-			playerMat = MaterialLib.get("PlayerMat");
-			std::cout << std::endl;
+			std::cout << "\n";
 		}
 
 		virtual void Shutdown() override {}
@@ -286,6 +319,13 @@ class Dev : public App {
 				imguiEnabled = !imguiEnabled;
 				MachY::Instance().getWindow().setRenderToScrn(!imguiEnabled);
 			}
+
+			checkPlayerInputs();
+
+			playerIdle->setAnimationPos(playerPos);
+			playerRun->setAnimationPos(playerPos);
+
+			activeAnimation->update();
 
 			return;
 		}
@@ -299,14 +339,10 @@ class Dev : public App {
 				model = glm::scale(model , { sceneSize.x , sceneSize.y , 0.f});
 				MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , VA , sceneMat , model));
 			}
-			{
-				glm::mat4 model = glm::mat4(1.f);
-				model = glm::translate(model , { playerPos.x , playerPos.y , 0.f });
-				model = glm::scale(model , { playerSize.x , playerSize.y , 0.f});
-				MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , VA , playerMat , model));
-			}
+			activeAnimation->render();
 
 			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
+
 			return;
 		}
 

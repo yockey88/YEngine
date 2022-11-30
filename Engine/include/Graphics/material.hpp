@@ -1,6 +1,8 @@
 #ifndef MATERIAL_HPP
 #define MATERIAL_HPP
 
+#include "log.hpp"
+
 #include "glm/glm.hpp"
 
 #include <memory>
