@@ -2,6 +2,13 @@
 
 using namespace machy;
 
+void SceneCore::calculateSpritesToRender(const glm::vec2& playerPos) {
+
+    
+
+    return;
+}
+
 void SceneCore::render() {
 
     auto& sprites = worldMap->getAllSprites();

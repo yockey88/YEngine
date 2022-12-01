@@ -216,7 +216,6 @@ namespace machy {
 		if (init(app)) {
 			
 			running = true;
-
 			while (running) {
 				update();
 				render();

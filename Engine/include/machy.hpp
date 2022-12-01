@@ -5,6 +5,7 @@
 
 #include "Core/window.hpp"
 #include "Core/assetLibrary.hpp"
+#include "Core/deltaTime.hpp"
 
 #include "Managers/logManager.hpp"
 #include "Managers/renderManager.hpp"
@@ -28,7 +29,6 @@ namespace machy {
 		core::AssetLibrary<graphics::Shader> ShaderLib;
 		core::AssetLibrary<graphics::Texture> TextureLib;
 		core::AssetLibrary<graphics::Material> MaterialLib;
-
 
 		bool initialized, running;
 

@@ -1,5 +1,5 @@
 workspace "MachineY"
-    startproject "Engine"
+    startproject "MachyDev"
     architecture "x64"
 
     configurations {
@@ -304,3 +304,95 @@ workspace "MachineY"
             optimize "on"
 
    
+
+    ---------------
+    -- Adventure --
+    ---------------
+    project "Adventure"
+        location "Adventure"
+        kind "ConsoleApp"
+        language "C++"
+        cppdialect "C++20"
+        staticruntime "on"
+        links "Engine"
+
+        targetdir(tdir)
+        objdir(odir)
+
+        files {
+            "%{prj.name}/src/**.cpp",
+            "%{prj.name}/src/**.hpp",
+            "%{externals.imgui}/*.h",
+            "%{externals.imgui}/*.cpp",
+            "%{externals.entt}/**.hpp",
+            "%{externals.glm}/**.hpp",
+            "%{externals.stb}/*.h"
+        }
+
+        externalincludedirs {
+            "Engine/include",
+            "%{externals.sdl2}/include",
+            "%{externals.glad}/include",
+            "%{externals.entt}",
+            "%{externals.spdlog}/include",
+            "%{externals.imgui}",
+            "%{externals.glm}",
+            "%{externals.stb}"
+        }
+
+        flags { "FatalWarnings" }
+
+        filter { "system:windows" , "configurations:*" }
+            systemversion "latest"
+            defines {
+                "MACHY_PLATFORM_WINDOWS",
+                "MACHY_GUI"
+            }
+
+            libdirs {
+                "%{externals.sdl2}/lib/x64"
+            }
+
+            links {
+                "Engine",
+                "SDL2",
+                "glad"
+            }
+
+        filter { "system:macosx" , "configurations:*" }
+            systemversion "latest"
+            xcodebuildsettings {
+                ["MACOSX_DEPLOYMENT_TARGET"] = "10.15",
+                ["UseModernBuildSystem"] = "NO"
+            }
+            defines {
+                "MACHY_PLATFORM_MAC"
+            }
+            links {
+                "SDL2.framework",
+                "glad"
+            }
+
+        filter { "system:linux" , "configurations:*" }
+            defines {
+                "MACHY_PLATFORM_LINUX"
+            }
+            links {
+                "SDL2",
+                "glad"
+            }
+
+        filter "configurations:Debug"
+            defines {
+                "MACHY_CONFIG_DEBUG"
+            }
+            runtime "Debug"
+            symbols "on"
+
+        filter "configurations:Release"
+            defines {
+                "MACHY_CONFIG_RELEASE"
+            }
+            runtime "Release"
+            symbols "off"
+            optimize "on"

@@ -13,8 +13,10 @@ SDL/OpenGL Game Engine for learning purposes
    - From root directory \
       ``` python3 ./cli.py gensln ``` \
       ``` python3 ./cli.py buildsln -config=[Config] ``` \
-      ``` python3 ./cli.py run -config=[Config] -proj=[ProjName] ``` \
-      ``` python3 ./clip.py mklink -proj=[Projname] ``` 
+      ``` python3 ./clip.py mklink -proj=[Projname] ``` \
+      ``` python3 ./cli.py run -config=[Config] -proj=[ProjName] ``` 
+      
  - In Windows Visual Studio
    - open solution in visual studio
    - build solution
+   - (it should be this simple but there is a bug with resource folders not being seen by Visual Studio)

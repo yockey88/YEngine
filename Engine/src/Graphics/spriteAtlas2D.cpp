@@ -8,9 +8,9 @@
 namespace machy {
 namespace graphics {
 
-    SpriteAtlas2D::SpriteAtlas2D(std::shared_ptr<Material> material) : material(material) , numTotalSprites(0) {}
+    SpriteAtlas2D::SpriteAtlas2D(std::shared_ptr<Material> material) : material(material) , numTotalSprites(0) , mapLayout({ 0 , 0 }) {}
 
-    void SpriteAtlas2D::createSprite(const glm::ivec2& pixSize , const glm::ivec2& posOfURInTexr) {
+    void SpriteAtlas2D::createSprite(glm::ivec2 pixSize , glm::ivec2 posOfURInTexr) {
 
         int pW = pixSize.x , pH = pixSize.y;
         int pX = posOfURInTexr.x , pY = posOfURInTexr.y;
@@ -26,6 +26,32 @@ namespace graphics {
 
         sprites[numTotalSprites] = std::make_shared<Sprite2D>(material , size , posInTexr);
         numTotalSprites++;
+
+        return;
+    }
+
+    void SpriteAtlas2D::createRandomAtlas(glm::ivec2 pixelD) {
+
+        framePixelDim = pixelD;
+
+        int urPosx;
+        int urPosy;
+
+        for (int i = 0; i < pixelD.y; i++) 
+            for (int j = 0; j < pixelD.x; j++) {
+                urPosx = j * pixelD.x; urPosy = i * pixelD.y;
+                createSprite({ pixelD.x , pixelD.y } , { urPosx , urPosy });
+            }
+
+        frameDim = glm::vec2((pixelD.x / material->getTexture()->getWidth()) , (pixelD.y / material->getTexture()->getHeight()));
+        atlasFormed = true;
+
+        return;
+    }
+
+    void SpriteAtlas2D::createMap(glm::ivec2 sceneDim) {
+
+        
 
         return;
     }
