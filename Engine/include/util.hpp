@@ -8,6 +8,8 @@ namespace util {
 
     const std::string readShaderFile(const std::string& path);
 
+    const std::string readSceneFile(const std::string& path);
+
 }
 }
 

@@ -101,8 +101,9 @@ namespace machy {
 	*/
 	void MachY::update() {
 		
+		timer.step();
 		window.flushEvents();
-		ActiveApp->Update();
+		ActiveApp->Update(timer.getDelta());
 
 		return;
 	}
@@ -215,6 +216,7 @@ namespace machy {
 
 		if (init(app)) {
 			
+			timer.start();
 			running = true;
 			while (running) {
 				update();

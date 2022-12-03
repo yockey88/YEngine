@@ -62,7 +62,6 @@ namespace machy::core {
 			case SDL_KEYDOWN: 
 				switch (e.key.keysym.sym) {
 					case SDLK_ESCAPE: MachY::Instance().quit(); break;
-					case SDLK_SPACE: break;
 					default: break;
 				}
 			break;

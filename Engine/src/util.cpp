@@ -7,8 +7,7 @@ namespace machy {
 namespace util {
 
     const std::string readShaderFile(const std::string& path) {
-        std::string line;
-        std::string hold = "";
+        std::string line , hold = "";
 
         std::ifstream shader(path);
 
@@ -22,6 +21,23 @@ namespace util {
         }
 
         return hold;
+    }
+
+    const std::string readSceneFile(const std::string& path) {
+        std::string line , map = "";
+        std::ifstream mapFile(path);
+
+        MACHY_ASSERT(mapFile.is_open() , "Using Nonexistent Scene Path");
+
+        MACHY_TRACE("Loading Map -> {}" , path);
+
+        while (!mapFile.eof()) {
+            getline(mapFile , line);
+            map += line;
+        }
+
+        return map;
+
     }
 
 }

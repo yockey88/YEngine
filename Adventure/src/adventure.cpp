@@ -56,11 +56,13 @@ class Adventure : public App {
 
         virtual void Shutdown() override {}
 
-        virtual void Update() override {}
+        virtual void Update(const float& dt) override {}
 
         virtual void Render() override {}
 
-        virtual void ImGuiRender() override {}
+        virtual void ImGuiRender() override {
+            ImGui::ShowDemoWindow();
+        }
 };
 
 void Adventure::InitLibs() {

@@ -19,7 +19,7 @@ namespace machy {
             virtual void Initialize() {}
             virtual void Shutdown() {}
 
-            virtual void Update() {}
+            virtual void Update(const float& dt) {}
             virtual void Render() {}
             virtual void ImGuiRender() {}
     };

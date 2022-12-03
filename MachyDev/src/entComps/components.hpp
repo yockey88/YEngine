@@ -12,7 +12,14 @@
 #include "Graphics/texture.hpp"
 #include "Graphics/material.hpp"
 
+#include "Input/mouse.hpp"
+#include "Input/keyboard.hpp"
+#include "Input/joystick.hpp"
+
 #include "glm/glm.hpp"
+
+#include <unordered_map>
+#include <memory>
 
 using namespace machy;
 
@@ -29,14 +36,23 @@ struct PlayerCore {
     direction dir;
     glm::vec2 playerPos;
     float playerSpd;
+
+    void playerInputs();
 };
 
 struct SceneCore {
+    std::unordered_map<char , std::shared_ptr<graphics::Sprite2D>> sceneSpriteMap;
     std::shared_ptr<graphics::SpriteAtlas2D> worldMap;
+    glm::vec2 sceneSize;
+    glm::ivec2 txtDimensions;
+
+    std::string currMap;
 
     void render();
 
     void calculateSpritesToRender(const glm::vec2& playerPos);
+
+    SceneCore() : sceneSize({ 10.f , 10.f }) , txtDimensions({ 16 , 33 }) {}
 };
 
 struct TimeKeeper {
@@ -61,14 +77,5 @@ struct CameraState {
 	float cameraRotation;
 };
 
-struct ImGuiControls {
-    bool RenderGui;
-
-    bool RenderLibs;
-    bool RenderControls;
-    bool RenderGameView;
-
-    bool RenderDebugTools;
-};
 
 #endif

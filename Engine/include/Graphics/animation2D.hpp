@@ -9,18 +9,20 @@
 #include <vector>
 #include <chrono>
 #include <memory>
+#include <unordered_map>
 
 namespace machy {
 namespace graphics {
 
     class Sprite2D;
     class SpriteAtlas2D;
+    class VertexArray;
     class Material;
 
     class Animation2D {
+        
         std::shared_ptr<Material> material;
         std::shared_ptr<Sprite2D> activeSprite;
-        std::shared_ptr<SpriteAtlas2D> frameAtlas;
         std::vector<std::shared_ptr<Sprite2D>> frames;
 
         core::Timer timer;
@@ -38,7 +40,7 @@ namespace graphics {
         public:
             Animation2D(std::shared_ptr<Material> material , glm::ivec2 frameLayout);
 
-            void addFrameToAnimation(const glm::ivec2& layoutPos);
+            void addFrameToAnimation(const glm::ivec2& layoutPos , std::string name);
 
             void update();
             void render();

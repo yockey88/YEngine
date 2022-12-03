@@ -15,14 +15,13 @@ namespace graphics {
     class Sprite2D {
         std::shared_ptr<VertexArray> VA;
         std::shared_ptr<Material> material;
-        glm::vec2 gamePos , size;
+        glm::vec2 uvs , gamePos , size;
         glm::vec4 bounds;
         int ID , startIndex;
-
+        std::string name;
         public:
-            Sprite2D(std::shared_ptr<Material> material , const glm::vec2& size , const glm::vec2& posInTexr);
-
-            void render();
+            Sprite2D(const glm::vec2& size , const glm::vec2& posInTexr , std::string name);
+            Sprite2D(std::shared_ptr<Material> material , const glm::vec2& size , const glm::vec2& posInTexr , std::string name);
 
             inline void setPos(const glm::vec2& pos) { gamePos = pos; }
             inline void setID(const int& ID) { this->ID = ID; }
@@ -31,11 +30,13 @@ namespace graphics {
             void moveUD(const float& by) { gamePos.y += by; }
             void moveLR(const float& by) { gamePos.x += by; }
 
-            std::shared_ptr<Material> getMat() { return material; }
             std::shared_ptr<VertexArray> getVA() { return VA; }
+            std::shared_ptr<Material> getMat() { return material; }
 
             inline glm::vec2 getSize() const { return size; } 
+            inline glm::vec2 getPos() const { return gamePos; } 
             inline int getID() const { return ID; }
+            inline std::string getName() const { return name; }
     };
 
 }

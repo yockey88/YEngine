@@ -3,12 +3,10 @@
 #include "main.hpp"
 #include "util.hpp"
 
+#include "core/editorState.hpp"
 #include "entComps/components.hpp"
 
 #include "Graphics/framebuffer.hpp"
-#include "Graphics/animation2D.hpp"
-#include "Graphics/spriteAtlas2D.hpp"
-#include "Graphics/sprite2D.hpp"
 
 #include "Input/mouse.hpp"
 #include "Input/keyboard.hpp"
@@ -20,45 +18,44 @@
 namespace machy {
 
 class Dev : public App {
-	std::shared_ptr<PlayerCore> playerCore;
-	std::shared_ptr<SceneCore> sceneCore;
 
+	std::unique_ptr<EditorState> currState;
 	std::unique_ptr<TimeKeeper> timer;
 	std::unique_ptr<Libraries> libraries;
 	std::unique_ptr<CameraState> cameraState;
-	std::unique_ptr<ImGuiControls> guiControls;
 
-	void checkPlayerInputs();
+	std::shared_ptr<PlayerCore> playerCore;
+	std::shared_ptr<SceneCore> scene;
 
+	/* SEE BENEATH THE CLASS DECLARATION FOR HELPER FUNCTION DOCUMENTATION */
+	/* Initialization Helpers */
+	core::WindowProperties setWinProps();
+	void InitializeLibraries();
 	void initScene();
 	void initPlayer();
 	void initPlayerAnimations();
 	void initCamera();
-	void initGui();
-
-	void InitializeLibraries();
-
-	void ImGuiRenderControls();
+	/* Update Helpers */
+	void tickTimer();
+	void checkEditorInputs();
+	void checkInputs();
+	/* Render Helpers */
+	void mainRender();
+	/* Gui Helpers */
+	void ImGuiRenderMainMenuBar();
 	void ImGuiRenderLibs();
-	void ImGuiRenderSpriteAtlases();
+	void ImGuiRenderSceneBrowser();
+	void ImGuiRenderAssetBrowser();
+	void ImGuiRenderControls();
+	void ImGuiRenderControlMenuBar();
+	void ImGuiRenderMainControlMenus();
+	void ImGuiRenderAssetMenus();
+	void ImGuiRenderCamControl();
 	void ImGuiRenderGameView();
 	public:
-		Dev() { }
-		~Dev() { }
+		Dev() { currState = std::make_unique<EditorState>(); }
 
-		virtual core::WindowProperties GetWindowProperties() override { 
-			core::WindowProperties ret;
-
-			ret.guiProps.isDockingEnabled = true;
-			ret.guiProps.isViewportEnabled = false;
-
-			ret.guiProps.flags |= ImGuiWindowFlags_MenuBar;
-
-			ret.w = 2050; ret.h = 1152;
-			ret.flags |= SDL_WINDOW_RESIZABLE;
-			ret.title = "[Machine Y Development v{1.0.2}]";
-			return ret;
-		}
+		virtual core::WindowProperties GetWindowProperties() override { return setWinProps(); }
 
 		virtual void Initialize() override {
 
@@ -66,40 +63,27 @@ class Dev : public App {
 			timer = std::make_unique<TimeKeeper>();
 			timer->clock.start();
 
-			libraries = std::make_unique<Libraries>();
-			InitializeLibraries();
-			
-			MACHY_TRACE("Development Assets Loaded"); 
-			std::cout << "\n";
-
-			MACHY_TRACE("Loading Game Core");
-			playerCore = std::make_shared<PlayerCore>();
-			sceneCore = std::make_shared<SceneCore>();
+			InitializeLibraries();			
 
 			initScene();
 			initPlayer();
 			initCamera();
-			initGui();
 
 			std::cout << "\n";
 		}
 
 		virtual void Shutdown() override {}
 
-		virtual void Update() override {
+		virtual void Update(const float& dt) override {
 
-			timer->clock.step();
-			timer->delta = timer->clock.getDelta();
-			timer->msBuildUp += timer->delta;
+			tickTimer();
 
-			if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE) && !guiControls->RenderGui) {
-				guiControls->RenderGui = !guiControls->RenderGui;
-				MachY::Instance().getWindow().setRenderToScrn(!guiControls->RenderGui);
+			checkEditorInputs();
+
+			if (!currState->isEditingScene()) {
+				checkInputs();
+				playerCore->activeAnimation->update();
 			}
-
-			checkPlayerInputs();
-
-			playerCore->activeAnimation->update();
 
 			return;
 		}
@@ -107,9 +91,7 @@ class Dev : public App {
 		virtual void Render() override {
 			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , cameraState->camera));
 
-			sceneCore->render();
-
-			playerCore->activeAnimation->render();
+			mainRender();
 
 			MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
 
@@ -118,16 +100,19 @@ class Dev : public App {
 
 		virtual void ImGuiRender() override {
 
-			if (!guiControls->RenderGui)
+			if (!currState->isShowingGui())
 				return;
 
 			ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
 
-			if (guiControls->RenderControls) { ImGuiRenderControls(); }
-			if (guiControls->RenderLibs) { ImGuiRenderLibs(); }
-			if (guiControls->RenderGameView) { ImGuiRenderGameView(); }
+			if (currState->isShowingLibs())         { ImGuiRenderLibs();         }
+			
+			if (currState->isShowingControls())     { ImGuiRenderControls();     }
+			if (currState->isShowingSceneBrowser()) { ImGuiRenderSceneBrowser(); }
+			if (currState->isShowingAssetBrowser()) { ImGuiRenderAssetBrowser(); }
+			if (currState->isShowingGameView())     { ImGuiRenderGameView();     }
 
-			if (guiControls->RenderDebugTools) {
+			if (currState->isShowingDebug()) {
 				ImGui::ShowMetricsWindow();
 				ImGui::ShowStackToolWindow();
 			}
@@ -136,85 +121,140 @@ class Dev : public App {
 		}
 };
 
-void Dev::checkPlayerInputs() {
+/* Main Functions
+	-> Initialization (Editor , Scene , Player , Enemies , ....)
+	-> Player Inputs (Player Movement)
+	-> Major Callbacks
+*/
 
-	if (input::keyboard::keyDown(MACHY_INPUT_KEY_A)) {
-		playerCore->playerPos.x -= playerCore->playerSpd;
-		playerCore->activeAnimation = playerCore->playerRunL;
-		playerCore->dir = direction::left;
-	}
-	if (input::keyboard::keyDown(MACHY_INPUT_KEY_D)) {
-		playerCore->playerPos.x += playerCore->playerSpd;
-		playerCore->activeAnimation = playerCore->playerRunR;
-		playerCore->dir = direction::right;
-	}
+core::WindowProperties Dev::setWinProps() {
+	core::WindowProperties props;
 
-	if (input::keyboard::keyDown(MACHY_INPUT_KEY_W)) { 
-		playerCore->playerPos.y += playerCore->playerSpd; 
-		if (playerCore->dir == direction::left) {
-			playerCore->activeAnimation = playerCore->playerRunL;
-		} else {
-			playerCore->activeAnimation = playerCore->playerRunR;
-		}
-	}
-	if (input::keyboard::keyDown(MACHY_INPUT_KEY_S)) {
-		playerCore->playerPos.y -= playerCore->playerSpd;
-		if (playerCore->dir == direction::left) {
-			playerCore->activeAnimation = playerCore->playerRunL;
-		} else {
-			playerCore->activeAnimation = playerCore->playerRunR;
-		}
-	}
-	if (input::keyboard::keyDown(MACHY_INPUT_KEY_SPACE)) {
-		direction dir = playerCore->dir;
-		switch (dir) {
-			case direction::left: playerCore->playerPos.x -= 0.1f; break;
-			case direction::right: playerCore->playerPos.x += 0.1f; break;
-			case direction::up: playerCore->playerPos.y += 0.1f; break;
-			case direction::down: playerCore->playerPos.y -= 0.1f; break;
-			default: break;
-		}
-	}
+	props.guiProps.isDockingEnabled = true;
+	props.guiProps.isViewportEnabled = false;
+	props.guiProps.flags |= ImGuiWindowFlags_MenuBar;
 
-	if (input::keyboard::keyUp(MACHY_INPUT_KEY_A)) { playerCore->activeAnimation = playerCore->playerIdleL; }
-	if (input::keyboard::keyUp(MACHY_INPUT_KEY_D)) { playerCore->activeAnimation = playerCore->playerIdleR; }
+	props.w = 2050;
+	props.h = 1152;
 
-	if (input::keyboard::keyUp(MACHY_INPUT_KEY_W)) {
-		if (playerCore->dir == direction::left) {
-			playerCore->activeAnimation = playerCore->playerIdleL;
-		} else {
-			playerCore->activeAnimation = playerCore->playerIdleR;
-		}
-	}
-	if (input::keyboard::keyUp(MACHY_INPUT_KEY_S)) {
-		if (playerCore->dir == direction::left) {
-			playerCore->activeAnimation = playerCore->playerIdleL;
-		} else {
-			playerCore->activeAnimation = playerCore->playerIdleR;
-		}
-	}
+	props.flags |= SDL_WINDOW_RESIZABLE;
+	props.title = "[Machine Y Development v{1.0.2}]";
 
-	playerCore->playerIdleL->setAnimationPos(playerCore->playerPos);
-	playerCore->playerIdleR->setAnimationPos(playerCore->playerPos);
-	playerCore->playerRunL->setAnimationPos(playerCore->playerPos);
-	playerCore->playerRunR->setAnimationPos(playerCore->playerPos);
+	return props;
+}
+
+void Dev::tickTimer() {
+	timer->clock.step();
+	timer->delta = timer->clock.getDelta();
+	timer->msBuildUp += timer->delta;
+	return;
+}
+
+/* Initialization Helpers 
+	
+	1> InitializeLibraries() 
+		- loads vertex arrays into libraries
+		- loads shaders into libraries
+		- loads textures into libraries
+		- loads materials
+	
+	2> initScene() 
+		- creates new scene with library assets
+		- prepares initial scene conditions
+		- calculates correct sections of map to render
+		
+	3> initPlayer()
+		- initializes player with library assests
+		- <?> Reads State </?>
+		- prepares animations
+		- loads player iunto scene
+
+	4> initPlayerAnimations() <!> temporary </!>
+		- creates hard coded player animations
+		<X> needs morte flexibility </X>
+		<X> no way to make animation other than hardcoding </X>
+
+	5> initCamera() 
+		- initializes camera
+		- sets correct height , rotation , etc.
+*/
+void Dev::InitializeLibraries() {
+	libraries = std::make_unique<Libraries>();
+	{
+		std::string vShaderT = util::readShaderFile("resources/shaders/camera_texture.vert");
+		std::string fShaderT = util::readShaderFile("resources/shaders/camera_texture.frag");
+		std::string vShaderCT = util::readShaderFile("resources/shaders/camera_color_texture.vert");
+		std::string fShaderCT = util::readShaderFile("resources/shaders/camera_color_texture.frag");
+		std::shared_ptr<graphics::Shader> shader1 = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
+		libraries->ShaderLib.load("Texture" , shader1);
+		std::shared_ptr<graphics::Shader> shader2 = std::make_shared<graphics::Shader>(vShaderCT.c_str() , fShaderCT.c_str());
+		libraries->ShaderLib.load("ColorTexture" , shader2);
+	}
+	{
+		std::shared_ptr<graphics::Texture> texturePL = std::make_shared<graphics::Texture>("resources/sprites/characters/playerL.png");
+		std::shared_ptr<graphics::Texture> texturePR = std::make_shared<graphics::Texture>("resources/sprites/characters/playerR.png");
+		texturePL->setTextFilter(graphics::TextureFilter::nearest);
+		libraries->TextureLib.load("PlayerL" , texturePL);
+		texturePR->setTextFilter(graphics::TextureFilter::nearest);
+		libraries->TextureLib.load("PlayerR" , texturePR);
+	}
+	{
+		std::shared_ptr<graphics::Texture> textureObjs = std::make_shared<graphics::Texture>("resources/sprites/objects/objects.png");
+		std::shared_ptr<graphics::Texture> textureGr = std::make_shared<graphics::Texture>("resources/sprites/tilesets/TD_TilesetGrass.png");
+		std::shared_ptr<graphics::Texture> textureGr2 = std::make_shared<graphics::Texture>("resources/sprites/tilesets/Minifantasy.png");
+		std::shared_ptr<graphics::Texture> water = std::make_shared<graphics::Texture>("resources/sprites/tilesets/Water.png");
+		textureObjs->setTextFilter(graphics::TextureFilter::nearest);
+		libraries->TextureLib.load("Objects" , textureObjs);
+		textureGr->setTextFilter(graphics::TextureFilter::nearest);
+		libraries->TextureLib.load("Grass" , textureGr);
+		textureGr2->setTextFilter(graphics::TextureFilter::nearest);
+		libraries->TextureLib.load("MainGrass" , textureGr2);
+		textureGr2->setTextFilter(graphics::TextureFilter::nearest);
+		libraries->TextureLib.load("Water" , water);
+	}
+	{
+		std::shared_ptr<graphics::Material> matPL = std::make_shared<graphics::Material>(libraries->ShaderLib.get("Texture") , libraries->TextureLib.get("PlayerL"));
+		std::shared_ptr<graphics::Material> matPR = std::make_shared<graphics::Material>(libraries->ShaderLib.get("Texture") , libraries->TextureLib.get("PlayerR"));
+		std::shared_ptr<graphics::Material> matProps = std::make_shared<graphics::Material>(libraries->ShaderLib.get("ColorTexture") , libraries->TextureLib.get("Objects"));
+		std::shared_ptr<graphics::Material> matGrass = std::make_shared<graphics::Material>(libraries->ShaderLib.get("ColorTexture") , libraries->TextureLib.get("Grass"));
+		std::shared_ptr<graphics::Material> matGrass2 = std::make_shared<graphics::Material>(libraries->ShaderLib.get("ColorTexture") , libraries->TextureLib.get("MainGrass"));
+		std::shared_ptr<graphics::Material> waterMat = std::make_shared<graphics::Material>(libraries->ShaderLib.get("ColorTexture") , libraries->TextureLib.get("Water"));
+		libraries->MaterialLib.load("PlayerLMat" , matPL);
+		libraries->MaterialLib.load("PlayerRMat" , matPR);
+		libraries->MaterialLib.load("PropsMat" , matProps);
+		libraries->MaterialLib.load("GrassMat" , matGrass);
+		libraries->MaterialLib.load("MainGrassMat" , matGrass2);
+		libraries->MaterialLib.load("WaterMat" , waterMat);
+	}
+	
+	MACHY_TRACE("Development Assets Loaded"); 
+	std::cout << "\n";
 
 	return;
 }
 
 void Dev::initScene() {
-		
-	glm::ivec2 grassSize{ 256 , 142 };
-	glm::ivec2 grassPos{ 0 , 0 };
-	sceneCore->worldMap = std::make_shared<graphics::SpriteAtlas2D>(libraries->MaterialLib.get("GrassMat"));
 
-	sceneCore->worldMap->createRandomAtlas({ 32 , 32 });
+	scene = std::make_shared<SceneCore>();
+	scene->worldMap = std::make_shared<graphics::SpriteAtlas2D>(libraries->MaterialLib.get("MainGrassMat") , "grass");
+	scene->worldMap->addSpriteSheet(libraries->MaterialLib.get("WaterMat") , "water");
+
+	// scene->currMap = util::readSceneFile("resources/scenes/scene11.txt");
+
+	scene->worldMap->createSprite("grass" , "mainGrassBlock" , { 28 , 44 } , { 24 , 40 });
+	scene->worldMap->createSprite("water" , "mainWaterBlock" , { 24 , 72 } , { 48 , 48 });
+	scene->worldMap->getSprite("mainWaterBlock")->setPos({ 2.f , 0.f });
+	// scene->worldMap->createSprite("water" , "ShoreLine" , { 22 , 18 } , { 20 , 20 });
+	// scene->worldMap->getSprite("CornerShoreLine")->setPos({ -2.f , 0.f });
+	// scene->worldMap->createSprite("water" , "Water" , { 22 , 22 } , { 16 , 16 });
+	// scene->worldMap->getSprite("CornerShoreLine")->setPos({ 0.f , -3.f });
 	
 	return;
 }
 
 void Dev::initPlayer() {
 
+	playerCore = std::make_shared<PlayerCore>();
 	playerCore->playerPos = glm::vec2{ 0.f , 0.f };
 	playerCore->playerSpd = 0.005f;
 	initPlayerAnimations();
@@ -229,39 +269,39 @@ void Dev::initPlayerAnimations() {
 	glm::ivec2 frameLayout{ 6 , 5 };
 
 	playerCore->playerIdleL = std::make_shared<graphics::Animation2D>(libraries->MaterialLib.get("PlayerLMat") , frameLayout);
-	playerCore->playerIdleL->addFrameToAnimation({ 6 , 5 });
-	playerCore->playerIdleL->addFrameToAnimation({ 5 , 5 });
-	playerCore->playerIdleL->addFrameToAnimation({ 4 , 5 });
-	playerCore->playerIdleL->addFrameToAnimation({ 3 , 5 });
-	playerCore->playerIdleL->addFrameToAnimation({ 2 , 5 });
-	playerCore->playerIdleL->addFrameToAnimation({ 1 , 5 });
+	playerCore->playerIdleL->addFrameToAnimation({ 6 , 5 } , "IdleL1");
+	playerCore->playerIdleL->addFrameToAnimation({ 5 , 5 } , "IdleL2");
+	playerCore->playerIdleL->addFrameToAnimation({ 4 , 5 } , "IdleL3");
+	playerCore->playerIdleL->addFrameToAnimation({ 3 , 5 } , "IdleL4");
+	playerCore->playerIdleL->addFrameToAnimation({ 2 , 5 } , "IdleL5");
+	playerCore->playerIdleL->addFrameToAnimation({ 1 , 5 } , "IdleL6");
 	playerCore->playerIdleL->setAnimationPos({ 0.f , 0.f });
 
 	playerCore->playerIdleR = std::make_shared<graphics::Animation2D>(libraries->MaterialLib.get("PlayerRMat") , frameLayout);
-	playerCore->playerIdleR->addFrameToAnimation({ 1 , 5 });
-	playerCore->playerIdleR->addFrameToAnimation({ 2 , 5 });
-	playerCore->playerIdleR->addFrameToAnimation({ 3 , 5 });
-	playerCore->playerIdleR->addFrameToAnimation({ 4 , 5 });
-	playerCore->playerIdleR->addFrameToAnimation({ 5 , 5 });
-	playerCore->playerIdleR->addFrameToAnimation({ 6 , 5 });
+	playerCore->playerIdleR->addFrameToAnimation({ 1 , 5 } , "IdleR1");
+	playerCore->playerIdleR->addFrameToAnimation({ 2 , 5 } , "IdleR2");
+	playerCore->playerIdleR->addFrameToAnimation({ 3 , 5 } , "IdleR3");
+	playerCore->playerIdleR->addFrameToAnimation({ 4 , 5 } , "IdleR4");
+	playerCore->playerIdleR->addFrameToAnimation({ 5 , 5 } , "IdleR5");
+	playerCore->playerIdleR->addFrameToAnimation({ 6 , 5 } , "IdleR6");
 	playerCore->playerIdleR->setAnimationPos({ 0.f , 0.f });
 	
 	playerCore->playerRunL = std::make_shared<graphics::Animation2D>(libraries->MaterialLib.get("PlayerLMat") , frameLayout);
-	playerCore->playerRunL->addFrameToAnimation({ 6 , 4 });
-	playerCore->playerRunL->addFrameToAnimation({ 5 , 4 });
-	playerCore->playerRunL->addFrameToAnimation({ 4 , 4 });
-	playerCore->playerRunL->addFrameToAnimation({ 3 , 4 });
-	playerCore->playerRunL->addFrameToAnimation({ 2 , 4 });
-	playerCore->playerRunL->addFrameToAnimation({ 1 , 4 });
+	playerCore->playerRunL->addFrameToAnimation({ 6 , 4 } , "RunL1");
+	playerCore->playerRunL->addFrameToAnimation({ 5 , 4 } , "RunL2");
+	playerCore->playerRunL->addFrameToAnimation({ 4 , 4 } , "RunL3");
+	playerCore->playerRunL->addFrameToAnimation({ 3 , 4 } , "RunL4");
+	playerCore->playerRunL->addFrameToAnimation({ 2 , 4 } , "RunL5");
+	playerCore->playerRunL->addFrameToAnimation({ 1 , 4 } , "RunL6");
 	playerCore->playerRunL->setAnimationPos({ 0.f , 0.f });
 	
 	playerCore->playerRunR = std::make_shared<graphics::Animation2D>(libraries->MaterialLib.get("PlayerRMat") , frameLayout);
-	playerCore->playerRunR->addFrameToAnimation({ 1 , 4 });
-	playerCore->playerRunR->addFrameToAnimation({ 2 , 4 });
-	playerCore->playerRunR->addFrameToAnimation({ 3 , 4 });
-	playerCore->playerRunR->addFrameToAnimation({ 4 , 4 });
-	playerCore->playerRunR->addFrameToAnimation({ 5 , 4 });
-	playerCore->playerRunR->addFrameToAnimation({ 6 , 4 });
+	playerCore->playerRunR->addFrameToAnimation({ 1 , 4 } , "RunR1");
+	playerCore->playerRunR->addFrameToAnimation({ 2 , 4 } , "RunR2");
+	playerCore->playerRunR->addFrameToAnimation({ 3 , 4 } , "RunR3");
+	playerCore->playerRunR->addFrameToAnimation({ 4 , 4 } , "RunR4");
+	playerCore->playerRunR->addFrameToAnimation({ 5 , 4 } , "RunR5");
+	playerCore->playerRunR->addFrameToAnimation({ 6 , 4 } , "RunR6");
 	playerCore->playerRunR->setAnimationPos({ 0.f , 0.f });
 
 	return;
@@ -280,137 +320,77 @@ void Dev::initCamera() {
 	return;
 }
 
-void Dev::initGui() {
+/* Update Helpers 
 
-	guiControls = std::make_unique<ImGuiControls>();
-	guiControls->RenderGui = true;
-	guiControls->RenderControls = true;
-	guiControls->RenderLibs = true;
-	guiControls->RenderGameView = true;
-	guiControls->RenderDebugTools = true;
+	1> checkEditorInputs()
+		- reads main editor inputs
+		- determines effect on editor state
+		- toggles/flips windows/state accordingly
 
-	return;
-}
+	2> checkInputs()
+		- once state is set correctly updates main systems
+		- reads player/user input
+		- updates game/editor
+*/
+void Dev::checkEditorInputs() {
 
-void Dev::InitializeLibraries() {
-	{
-		std::shared_ptr<graphics::VertexArray> va = std::make_shared<graphics::VertexArray>();
-		{
-			MACHY_CREATE_VERTEX_BUFFER(vb , float);
-			vb->pushVertex({  0.5f ,  0.5f , 0.f });
-			vb->pushVertex({  0.5f , -0.5f , 0.f });
-			vb->pushVertex({ -0.5f , -0.5f , 0.f });
-			vb->pushVertex({ -0.5f ,  0.5f , 0.f });
-			vb->setLayout({ 3 });
-			va->pushBuffer(std::move(vb));
-		}
-		va->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
-		va->upload();
-		libraries->VertLib.load("Mesh" , va);
+	if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE) && !currState->isShowingGui()) {
+		currState->toggleWindow(Windows::Gui);
+		MachY::Instance().getWindow().setRenderToScrn(!currState->isShowingGui());
 	}
-	{
-		std::shared_ptr<graphics::VertexArray> va = std::make_shared<graphics::VertexArray>();
-		{
-			MACHY_CREATE_VERTEX_BUFFER(vb , float);
-			vb->pushVertex({  0.5f ,  0.5f , 0.f });
-			vb->pushVertex({  0.5f , -0.5f , 0.f });
-			vb->pushVertex({ -0.5f , -0.5f , 0.f });
-			vb->pushVertex({ -0.5f ,  0.5f , 0.f });
-			vb->setLayout({ 3 });
-			va->pushBuffer(std::move(vb));
-		}
-		{
-			MACHY_CREATE_VERTEX_BUFFER(vb , short);
-			vb->pushVertex({ 1 , 1 });
-			vb->pushVertex({ 1 , 0 });
-			vb->pushVertex({ 0 , 0 });
-			vb->pushVertex({ 0 , 1 });
-			vb->setLayout({ 2 });
-			va->pushBuffer(std::move(vb));
-		}
-		va->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
-		va->upload();
-		libraries->VertLib.load("TexturedMesh" , va);
-	}
-	{
-		std::string vShaderT = util::readShaderFile("resources/shaders/camera_texture.vert");
-		std::string fShaderT = util::readShaderFile("resources/shaders/camera_texture.frag");
-		std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
-		libraries->ShaderLib.load("Texture" , shader);
-	}
-	{
-		std::string vShaderT = util::readShaderFile("resources/shaders/camera_color_texture.vert");
-		std::string fShaderT = util::readShaderFile("resources/shaders/camera_color_texture.frag");
-		std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
-		libraries->ShaderLib.load("ColorTexture" , shader);
-	}
-	{
-		std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/playerL.png");
-		texture->setTextFilter(graphics::TextureFilter::nearest);
-		libraries->TextureLib.load("PlayerL" , texture);
-	}
-	{
-		std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/characters/playerR.png");
-		texture->setTextFilter(graphics::TextureFilter::nearest);
-		libraries->TextureLib.load("PlayerR" , texture);
-	}
-	{
-		std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/objects/objects.png");
-		texture->setTextFilter(graphics::TextureFilter::nearest);
-		libraries->TextureLib.load("Objects" , texture);
-	}
-	{
-		std::shared_ptr<graphics::Texture> texture = std::make_shared<graphics::Texture>("resources/sprites/tilesets/TD_TilesetGrass.png");
-		texture->setTextFilter(graphics::TextureFilter::linear);
-		libraries->TextureLib.load("Grass" , texture);
-	}
-	{
-		std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(libraries->ShaderLib.get("Texture") , libraries->TextureLib.get("PlayerL"));
-		libraries->MaterialLib.load("PlayerLMat" , mat);
-	}
-	{
-		std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(libraries->ShaderLib.get("Texture") , libraries->TextureLib.get("PlayerR"));
-		libraries->MaterialLib.load("PlayerRMat" , mat);
-	}
-	{
-		std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(libraries->ShaderLib.get("ColorTexture") , libraries->TextureLib.get("Objects"));
-		libraries->MaterialLib.load("SceneMat" , mat);
-	}
-	{
-		std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(libraries->ShaderLib.get("ColorTexture") , libraries->TextureLib.get("Grass"));
-		libraries->MaterialLib.load("GrassMat" , mat);
+	if (input::keyboard::keyDown(MACHY_INPUT_KEY_H) && !currState->isInMainState()) {
+		currState->flipState(States::MainState);
+		MachY::Instance().getWindow().setRenderToScrn(false);
 	}
 
 	return;
 }
 
-void Dev::ImGuiRenderControls() {
-	if (ImGui::Begin("Controls")) {
+void Dev::checkInputs() {
 
-		if (ImGui::Button("Game View")) { 
-			guiControls->RenderGui = !guiControls->RenderGui;
-			MachY::Instance().getWindow().setRenderToScrn(!guiControls->RenderGui);
-		}
-		
-		ImGui::Separator();
-
-		float camH = cameraState->camera->getHeight();
-		ImGui::DragFloat("Camera Height" , &camH , 0.5f);
-		cameraState->camera->setHeight(camH);
-		glm::vec3 camP = cameraState->cameraPos;
-		float camR = cameraState->cameraRotation;
-		ImGui::DragFloat3("Camera Position" , glm::value_ptr(camP) , 0.1f);
-		ImGui::DragFloat("Camera Rotation" , &camR , 0.05f);
-		if (camR != cameraState->cameraRotation || camP != cameraState->cameraPos) {
-			cameraState->cameraPos = camP;
-			cameraState->cameraRotation = camR;
-			cameraState->camera->setViewMat(cameraState->cameraPos , cameraState->cameraRotation);
-		}
-	}
-	ImGui::End();
+	playerCore->playerInputs();
+	cameraState->cameraPos = glm::vec3(playerCore->playerPos.x , playerCore->playerPos.y , cameraState->cameraPos.z);
+	cameraState->camera->setViewMat(cameraState->cameraPos , cameraState->cameraRotation);
 
 	return;
-	}
+}
+
+
+/* Render Helpers 
+
+	1> mainRender() 
+		- renders game scene
+		- renders game character
+*/
+void Dev::mainRender() {
+
+	scene->render();
+	playerCore->activeAnimation->render();
+
+	return;
+}
+
+/* Gui Helpers
+
+	--> These are exactly what they say, 
+			since this from outside libraries I will leave it uncommented 
+			unless relevant to editor <--
+
+	1> ImGuiRenderMainMenuBar()
+	2> ImGuiRenderLibs()
+	3> ImGuiRenderAssetSpawner()
+
+	4> ImGuiRenderControls()
+	5> ImGuiRenderControlMenuBar()
+	6> ImGuiRenderMainControlMenus()
+	7> ImGuiRenderAssetMenus()
+	8> ImGuiRenderCamControl()
+
+	9> ImGUiRenderGameView()
+*/
+void Dev::ImGuiRenderMainMenuBar() {
+	return;
+}
 
 void Dev::ImGuiRenderLibs() {
 	if (ImGui::Begin("Asset Libraries")) {
@@ -502,14 +482,137 @@ void Dev::ImGuiRenderLibs() {
 	return;
 }
 
+void Dev::ImGuiRenderSceneBrowser() {
+	
+	if (ImGui::Begin("Scene Browser")) {
+
+
+
+	}
+	ImGui::End();
+
+	return;
+}
+
+void Dev::ImGuiRenderAssetBrowser() {
+	
+	auto& sprites = scene->worldMap->getAllSprites();
+	if (ImGui::Begin("Asset Browser")) {
+		if (ImGui::BeginChild("Sprites")) {
+
+			for (auto& sprite : sprites) {
+				if (ImGui::TreeNode(sprite.first.c_str())) {	
+					ImGui::Text("Sprite Size -> < %03f , %03f >" , sprite.second->getSize().x , sprite.second->getSize().y);
+					// if (ImGui::Button("Spawn")) { /* scene->worldMap->createSprite() */ }
+					ImGui::TreePop();
+				}
+			}
+
+		}
+		ImGui::EndChild();
+	}
+	ImGui::End();
+
+	return;
+}
+
+void Dev::ImGuiRenderControls() {
+	// To Do -> /* ImGuiRenderMainMenuBar(); */
+	if (ImGui::Begin("Controls" , currState->isShowingGuiPntr() , ImGuiWindowFlags_MenuBar)) {
+
+		ImGuiRenderControlMenuBar();
+		ImGui::Separator();
+
+		ImGuiRenderCamControl();
+		ImGui::Separator();
+
+		if (ImGui::BeginChild("Scene Controls")) {
+			glm::vec2 newPos = scene->worldMap->getSprite("mainGrBlock")->getPos();
+			glm::vec2 newSize = scene->worldMap->getSprite("mainGrBlock")->getSize();
+
+			ImGui::DragFloat2("Grass Pos" , glm::value_ptr(newPos) , 0.02f);
+			scene->worldMap->getSprite("mainGrBlock")->setPos(newPos);
+
+			ImGui::DragFloat2("Grass Size" , glm::value_ptr(newSize) , 0.02f);
+			scene->worldMap->getSprite("mainGrBlock")->setSize(newSize);
+
+		}
+		ImGui::EndChild();
+	}
+	ImGui::End();
+
+	return;
+}
+
+void Dev::ImGuiRenderControlMenuBar() {
+
+	if (ImGui::Button("Game View")) {
+		currState->toggleWindow(Windows::Gui);
+		MachY::Instance().getWindow().setRenderToScrn(!currState->isShowingGui());
+	}
+
+	if (ImGui::BeginMenuBar()) {
+		
+		ImGuiRenderMainControlMenus();
+		ImGuiRenderAssetMenus();
+
+		ImGui::EndMenuBar();
+
+	}
+	
+
+	return;
+}
+
+void Dev::ImGuiRenderMainControlMenus() {
+
+	if (ImGui::BeginMenu("Editing")) {
+		if (ImGui::MenuItem("Playtest Game")) {
+			currState->flipState(States::Playtesting);
+			MachY::Instance().getWindow().setRenderToScrn(!currState->isShowingGui());
+		}
+		if (ImGui::MenuItem("Edit Scene")) { currState->flipState(States::Editing); }
+		ImGui::EndMenu();
+	}
+
+	return;
+}
+
+void Dev::ImGuiRenderAssetMenus() {
+
+	if (ImGui::BeginMenu("Assets")) {
+
+		if (ImGui::MenuItem("Open Asset Browser")) { currState->toggleWindow(Windows::AssetBrowser); }
+
+		ImGui::EndMenu();
+	}
+
+	return;
+}
+
+void Dev::ImGuiRenderCamControl() {
+
+	float camH = cameraState->camera->getHeight();
+	ImGui::DragFloat("Camera Height" , &camH , 0.5f);
+	cameraState->camera->setHeight(camH);
+	glm::vec3 camP = cameraState->cameraPos;
+	float camR = cameraState->cameraRotation;
+	ImGui::DragFloat3("Camera Position" , glm::value_ptr(camP) , 0.1f);
+	ImGui::DragFloat("Camera Rotation" , &camR , 0.05f);
+	if (camR != cameraState->cameraRotation || camP != cameraState->cameraPos) {
+		cameraState->cameraPos = camP;
+		cameraState->cameraRotation = camR;
+		cameraState->camera->setViewMat(cameraState->cameraPos , cameraState->cameraRotation);
+	}
+
+	return;
+}
+
 void Dev::ImGuiRenderGameView() {
 
 	if (ImGui::Begin("GameView")) {
-		if (ImGui::IsWindowHovered())
-			ImGui::CaptureMouseFromApp(false);
 
 		auto& window = MachY::Instance().getWindow();
-
 		ImVec2 winSize = ImGui::GetWindowSize();
 		glm::ivec2 arSize = window.getCorrectAspectRatioSize((int)winSize.x - 15, (int)winSize.y - 35);
 		ImVec2 size = { (float)arSize.x , (float)arSize.y };
@@ -526,6 +629,7 @@ void Dev::ImGuiRenderGameView() {
 	
 }
 
+/* Machine Y Entry Point Override */
 machy::App* CreateApp() {
 	return new Dev;
 }

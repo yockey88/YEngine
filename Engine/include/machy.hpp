@@ -21,6 +21,7 @@ namespace machy {
         App* ActiveApp;
 
 		core::Window window;
+		core::Timer timer;
 		
 		managers::LogManager log;
         managers::RenderManager renderer;

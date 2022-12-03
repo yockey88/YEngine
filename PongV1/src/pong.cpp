@@ -192,7 +192,7 @@ namespace machy {
 
             virtual void Shutdown() override {}
 
-            virtual void Update() override {
+            virtual void Update(const float& dt) override {
 
                 paddleL->Update();
                 paddleR->Update();

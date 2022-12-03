@@ -11,7 +11,7 @@ namespace core {
         float deltaTime;
 
         public:
-            Timer() : deltaTime(0) {}
+            Timer() : deltaTime(0.f)  {}
 
             void start();
 
