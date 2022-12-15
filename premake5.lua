@@ -17,11 +17,15 @@ workspace "MachineY"
     externals["entt"] = "external/entt"
     externals["spdlog"] = "external/spdlog-1.11.0"
     externals["glad"] = "external/glad"
+    externals["box2d"] = "external/box2d"
     externals["glm"] = "external/glm-master"
     externals["stb"] = "external/stb"
+    externals["ImEntt"] = "external/ImEnttComponent"
+    externals["json"] = "external/json"
 
     -- Glad before all
     include "external/glad"
+    include "external/box2d"
 
     --------------------
     -- Engine Library --
@@ -44,8 +48,12 @@ workspace "MachineY"
             "%{externals.entt}/.hpp",
             "%{externals.glad}**.c",
             "%{externals.glad}**.h",
+            "%{externals.box2d}**.h",
+            "%{externals.box2d}**.cpp",
             "%{externals.glm}/**.hpp",
-            "%{externals.stb}/*.h"
+            "%{externals.stb}/*.h",
+            "%{externals.ImEntt}/*.hpp",
+            "%{externals.json}/**.hpp"
         }
 
         externalincludedirs {
@@ -55,8 +63,11 @@ workspace "MachineY"
             "%{externals.entt}",
             "%{externals.spdlog}/include",
             "%{externals.glad}/include",
+            "%{externals.box2d}/include/box2d",
             "%{externals.glm}",
-            "%{externals.stb}"
+            "%{externals.stb}",
+            "%{externals.ImEntt}",
+            "%{externals.json}/include"
         }
 
         flags { "FatalWarnings" }
@@ -78,7 +89,8 @@ workspace "MachineY"
 
             links {
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter { "system:macosx" , "configurations:*" }
@@ -127,22 +139,24 @@ workspace "MachineY"
 
         files {
             "%{prj.name}/src/**.cpp",
-            "%{externals.imgui}/*.h",
-            "%{externals.imgui}/*.cpp",
-            "%{externals.entt}/**.hpp",
-            "%{externals.glm}/**.hpp",
-            "%{externals.stb}/*.h"
+            "%{prj.name}/src/**.hpp"
         }
 
         externalincludedirs {
+            "%{prj.name}/src",
+            "%{prj.name}/core",
+            "%{prj.name}/gui",
             "Engine/include",
             "%{externals.sdl2}/include",
             "%{externals.glad}/include",
+            "%{externals.box2d}/include/box2d",
             "%{externals.spdlog}/include",
             "%{externals.entt}",
             "%{externals.imgui}",
             "%{externals.glm}",
-            "%{externals.stb}"
+            "%{externals.stb}",
+            "%{externals.ImEntt}",
+            "%{externals.json}/include"
         }
 
         flags { "FatalWarnings" }
@@ -165,7 +179,8 @@ workspace "MachineY"
             links {
                 "Engine",
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter { "system:macosx" , "configurations:*" }
@@ -188,7 +203,8 @@ workspace "MachineY"
             }
             links {
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter "configurations:Debug"
@@ -222,12 +238,7 @@ workspace "MachineY"
 
         files {
             "%{prj.name}/src/**.cpp",
-            "%{prj.name}/src/**.hpp",
-            "%{externals.imgui}/*.h",
-            "%{externals.imgui}/*.cpp",
-            "%{externals.entt}/**.hpp",
-            "%{externals.glm}/**.hpp",
-            "%{externals.stb}/*.h"
+            "%{prj.name}/src/**.hpp"
         }
 
         externalincludedirs {
@@ -239,7 +250,9 @@ workspace "MachineY"
             "%{externals.spdlog}/include",
             "%{externals.imgui}",
             "%{externals.glm}",
-            "%{externals.stb}"
+            "%{externals.stb}",
+            "%{externals.ImEntt}",
+            "%{externals.json}/include"
         }
 
         flags { "FatalWarnings" }
@@ -262,7 +275,8 @@ workspace "MachineY"
             links {
                 "Engine",
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter { "system:macosx" , "configurations:*" }
@@ -276,7 +290,8 @@ workspace "MachineY"
             }
             links {
                 "SDL2.framework",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter { "system:linux" , "configurations:*" }
@@ -285,7 +300,8 @@ workspace "MachineY"
             }
             links {
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter "configurations:Debug"
@@ -321,12 +337,7 @@ workspace "MachineY"
 
         files {
             "%{prj.name}/src/**.cpp",
-            "%{prj.name}/src/**.hpp",
-            "%{externals.imgui}/*.h",
-            "%{externals.imgui}/*.cpp",
-            "%{externals.entt}/**.hpp",
-            "%{externals.glm}/**.hpp",
-            "%{externals.stb}/*.h"
+            "%{prj.name}/src/**.hpp"
         }
 
         externalincludedirs {
@@ -337,7 +348,9 @@ workspace "MachineY"
             "%{externals.spdlog}/include",
             "%{externals.imgui}",
             "%{externals.glm}",
-            "%{externals.stb}"
+            "%{externals.stb}",
+            "%{externals.ImEntt}",
+            "%{externals.json}/include"
         }
 
         flags { "FatalWarnings" }
@@ -356,7 +369,8 @@ workspace "MachineY"
             links {
                 "Engine",
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter { "system:macosx" , "configurations:*" }
@@ -379,7 +393,8 @@ workspace "MachineY"
             }
             links {
                 "SDL2",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter "configurations:Debug"

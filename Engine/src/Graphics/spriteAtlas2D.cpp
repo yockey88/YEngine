@@ -38,11 +38,7 @@ namespace graphics {
         glm::vec2 pos{ cxRatio , cyRatio };
         std::shared_ptr<Sprite2D> newSprite = std::make_shared<Sprite2D>(mat , size , pos , spriteName);
         newSprite->setPos({ 0.f , 0.f });
-        if (pW > pH) {
-            newSprite->setSize({ ((float)pW / (float)pW) , 1.f }); 
-        } else {
-            newSprite->setSize({ 1.f , ((float)pH / (float)pW) });
-        }
+        newSprite->setSize({ ((float)pW / (float)pW) , ((float)pH / (float)pW)});
 
         sprites[spriteName] = newSprite;
         numTotalSprites++;

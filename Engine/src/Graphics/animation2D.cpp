@@ -17,8 +17,8 @@ namespace graphics {
         float pW = ((float)tWidth / (float)frameLayout.x);
         float pH = ((float)tHeight / (float)frameLayout.y);
 
-        frameSize.x = (pW / tWidth) - 0.002f;
-        frameSize.y = (pH / tHeight) - 0.002f;
+        frameSize.x = ((pW / tWidth) - 0.002f);
+        frameSize.y = ((pH / tHeight) - 0.002f);
 
         return;
     }
@@ -83,7 +83,7 @@ namespace graphics {
 
         glm::mat4 model = glm::mat4(1.f);
         model = glm::translate(model , { activeSprite->getPos().x , activeSprite->getPos().y , 0.f});
-        model = glm::scale(model , { activeSprite->getSize().x , activeSprite->getSize().y , 1.f });
+        model = glm::scale(model , { 3.f * activeSprite->getSize().x , 3.f * activeSprite->getSize().y , 1.f });
 
         MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , activeSprite->getVA() , material , model));
 

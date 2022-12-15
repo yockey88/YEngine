@@ -45,7 +45,6 @@ namespace managers {
             void flush();
 
             void clear();
-
     };
 
 }

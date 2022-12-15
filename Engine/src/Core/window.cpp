@@ -23,9 +23,10 @@ namespace machy::core {
 		wMin = 1024; hMin = 576;
 		flags = SDL_WINDOW_OPENGL;
 		aspectRatio = 16.f / 9.f;
-		cc.x = static_cast<float>(0x64) / static_cast<float>(0xFF);
-		cc.y = static_cast<float>(0x95) / static_cast<float>(0xFF);
-		cc.z = static_cast<float>(0xED) / static_cast<float>(0xFF);
+		cc.x = static_cast<float>(0x2f) / static_cast<float>(0xFF);
+		cc.y = static_cast<float>(0x61) / static_cast<float>(0xFF);
+		cc.z = static_cast<float>(0xc4) / static_cast<float>(0xFF);
+		cc.w = static_cast<float>(0xFF) / static_cast<float>(0xFF);
 		title = "[Machine Y Appless Engine v{1.0.1}]";
 	}
 
@@ -44,8 +45,8 @@ namespace machy::core {
 		vertArray->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
 		vertArray->upload();
 
-		vShader = util::readShaderFile("resources/shaders/basic_shader.vert");
-		fShader = util::readShaderFile("resources/shaders/basic_shader.frag");
+		vShader = util::readShaderFile("resources/shaders/basic_camera_shader.vert");
+		fShader = util::readShaderFile("resources/shaders/basic_camera_shader.frag");
 		shader = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
 
 		return;
@@ -169,7 +170,7 @@ namespace machy::core {
 		open = true;
 
 		frameBuffer = std::make_shared<graphics::Framebuffer>(props.w , props.h);
-		glm::vec4 cc = { props.cc.r , props.cc.g , props.cc.b , 1.f };
+		glm::vec4 cc = { props.cc.r , props.cc.g , props.cc.b , props.cc.a };
 		frameBuffer->setClearColor(cc);
 
 		initializeScrnRender();
@@ -207,12 +208,8 @@ namespace machy::core {
 
 			gui.handleSDLEvent(e);
 
-			if (!gui.wantMouse()) 
-				input::mouse::update();
-
-			if (!gui.wantKeyboard()) 
-				input::keyboard::update();
-
+			input::mouse::update();
+			input::keyboard::update();
 			input::joystick::update();
 		}
 

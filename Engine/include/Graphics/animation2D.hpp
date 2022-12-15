@@ -46,6 +46,9 @@ namespace graphics {
             void render();
 
             void setAnimationPos(glm::vec2 pos);
+
+            inline glm::vec2 getFrameSize() const { return frameSize; }
+            inline glm::ivec2 getBaseTextureSize() const { return { (int)tWidth , (int)tHeight }; }
     };
 
 }

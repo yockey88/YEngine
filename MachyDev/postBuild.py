@@ -12,7 +12,7 @@ args = globals.ProcessArguments(sys.argv)
 CONFIG = globals.GetArgValue(args, "config", "Debug")
 PROJECT = globals.GetArgValue(args, "proj", globals.MAIN_PROJ_NAME)
 
-dest = "{}/../bin/{}/{}".format(os.getcwd(), CONFIG, PROJECT)
+dest = "{}/../bin/{}/{}".format(os.getcwd(), CONFIG , PROJECT)
 
 if globals.IsWindows():
     print("Executing Postbuild Script...")

@@ -1,15 +1,21 @@
 #include "editorState.hpp"
 
+#include "machy.hpp"
+#include "Input/keyboard.hpp"
+
 namespace machy {
 
     void EditorState::setToDefault() {
         inMainState = true;
 
         showingGui = true;
+        showingSceneInfo = true;
         showingControls = true;
         showingLibs = true;
         showingAssetBrowser = true;
         showingGameView = true;
+
+        swappingScenes = false;
 
         showingDebug = false;
         editingScene = false;
@@ -17,17 +23,41 @@ namespace machy {
         return;
     }
 
-    EditorState::EditorState() : currFrameLength(0.f) {
+    EditorState::EditorState() : currFrameLength(0.f) , now(0.f) , last(0.f) {
         inMainState = true;
 
         showingGui = true;
+        showingSceneInfo = true;
         showingControls = true;
         showingLibs = true;
         showingAssetBrowser = true;
         showingGameView = true;
 
+        swappingScenes = false;
+
         showingDebug = false;
-        editingScene = false;        
+        editingScene = false;
+
+        clock.start();        
+    }
+
+    void EditorState::checkInputs() {
+
+        if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE) && !isShowingGui()) {
+            toggleWindow(Windows::Gui);
+            MachY::Instance().getWindow().setRenderToScrn(!isShowingGui());
+        }
+        if (input::keyboard::keyDown(MACHY_INPUT_KEY_H) && !isInMainState()) {
+            flipState(States::MainState);
+            MachY::Instance().getWindow().setRenderToScrn(false);
+        }
+
+        return;
+    }
+
+    void EditorState::tickTimer() {
+        clock.step();
+        return;
     }
 
     void EditorState::flipState(States s) {
@@ -61,6 +91,17 @@ namespace machy {
             case Windows::Debug: showingDebug = !showingDebug; break;
             case Windows::AssetBrowser: showingAssetBrowser = !showingAssetBrowser; break;
             case Windows::GameView: showingGameView = !showingGameView; break;
+
+            default: break;
+        }
+
+        return;
+    }
+
+    void EditorState::queueAction(UpdateAction a) {
+        
+        switch (a) {
+            case UpdateAction::sceneSwitch: swappingScenes = true; break;
 
             default: break;
         }

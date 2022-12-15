@@ -10,7 +10,6 @@ namespace util {
         std::string line , hold = "";
 
         std::ifstream shader(path);
-
         MACHY_ASSERT(shader.is_open() , "Using Nonexistent Shader Paths");
 
         MACHY_TRACE("Loading Shader Program -> {}" , path);
@@ -23,7 +22,8 @@ namespace util {
         return hold;
     }
 
-    const std::string readSceneFile(const std::string& path) {
+    std::tuple<int , std::string> readSceneFile(const std::string& path) {
+        int ret;
         std::string line , map = "";
         std::ifstream mapFile(path);
 
@@ -31,12 +31,14 @@ namespace util {
 
         MACHY_TRACE("Loading Map -> {}" , path);
 
+        getline(mapFile , line);
+        ret = std::stoi(line);
         while (!mapFile.eof()) {
             getline(mapFile , line);
             map += line;
         }
 
-        return map;
+        return { ret , map };
 
     }
 

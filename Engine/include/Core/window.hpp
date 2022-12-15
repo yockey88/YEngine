@@ -26,7 +26,7 @@ namespace core {
 		int wMin , hMin;
 		int flags;
 		float aspectRatio;
-		glm::vec3 cc;
+		glm::vec4 cc;
 		std::string title;
 
 		WindowProperties();
