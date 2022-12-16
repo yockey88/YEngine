@@ -15,8 +15,6 @@ namespace machy {
         showingAssetBrowser = true;
         showingGameView = true;
 
-        swappingScenes = false;
-
         showingDebug = false;
         editingScene = false;
 
@@ -32,8 +30,6 @@ namespace machy {
         showingLibs = true;
         showingAssetBrowser = true;
         showingGameView = true;
-
-        swappingScenes = false;
 
         showingDebug = false;
         editingScene = false;
@@ -100,11 +96,7 @@ namespace machy {
 
     void EditorState::queueAction(UpdateAction a) {
         
-        switch (a) {
-            case UpdateAction::sceneSwitch: swappingScenes = true; break;
-
-            default: break;
-        }
+        
 
         return;
     }

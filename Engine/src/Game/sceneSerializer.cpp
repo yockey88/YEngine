@@ -15,7 +15,7 @@ namespace machy {
 
         if (entity.HasComponent<game::EntityID>()) {
             auto& id = context->Entts().get<game::EntityID>(entity.get());
-            json["ID"] = { id.ID , id.name };
+            json["ID"] = id.name;
         }
 
         if (entity.HasComponent<game::PositionComponent>()) {
@@ -46,6 +46,7 @@ namespace machy {
         auto& pos = context->Entts().get<game::PositionComponent>(entity.get());
 
         json["position"] = { pos.pos.x , pos.pos.y , pos.pos.z };
+        json["rotation"] = { pos.rotation.x , pos.rotation.y , pos.rotation.z };
         json["size"] = { pos.size.x , pos.size.y , pos.size.z };
 
         return;
@@ -56,7 +57,12 @@ namespace machy {
         auto& id = context->Entts().get<game::EntityID>(entity.get());
         auto& sprite = context->Entts().get<game::RenderComponent>(entity.get());
 
-        json["color"] = { sprite.color.r , sprite.color.g , sprite.color.b };
+        json["sprite"] = { sprite.color.r , sprite.color.g , sprite.color.b };
+
+        if (sprite.meshName != "Skeleton")
+            json["meshname"] = sprite.meshName;
+        if (sprite.matName.substr(0 , 3) != "Mat")
+            json["matname"] = sprite.matName;
 
         return;
     }
@@ -80,20 +86,24 @@ namespace machy {
         js json;
         file >> json;
 
-        if (json.contains("/ID"_json_pointer)) {
-            entity = context->createEnt(json["/ID/1"_json_pointer]);
+        if (json.contains("ID")) {
+            entity = context->createEnt(json["ID"].get<std::string>());
             entity.setContext(context.get());
-
-            auto& id = context->Entts().get<game::EntityID>(entity.get());
-            id.ID = json["/ID/0"_json_pointer].get<int>();
         }
         if (json.contains("/position"_json_pointer)) {
+            MACHY_ASSERT((json.contains("/position/0"_json_pointer) && json.contains("/position/1"_json_pointer) && json.contains("/position/2"_json_pointer)
+                            && json.contains("/size"_json_pointer) && json.contains("/size/0"_json_pointer) && json.contains("/size/1"_json_pointer) && json.contains("/size/2"_json_pointer)
+                            && json.contains("/rotation"_json_pointer) && json.contains("/rotation/0"_json_pointer) && json.contains("/rotation/1"_json_pointer) && json.contains("/rotation/2"_json_pointer)),
+                            "Entity Save File Corrupt");
             deserializeEntPos(entity , json);
         }
-        if (json.contains("/color"_json_pointer)) {
+        if (json.contains("/sprite"_json_pointer)) {
+            MACHY_ASSERT((json.contains("/sprite/0"_json_pointer) && json.contains("/sprite/1"_json_pointer) && json.contains("/sprite/2"_json_pointer)) , "Entity Save File Corrupt");
             deserializeEntSprite(entity , json);
         }
         if (json.contains("/camera"_json_pointer)) {
+            MACHY_ASSERT((json.contains("/camera"_json_pointer) && json.contains("/camera/0"_json_pointer) && json.contains("/camera/1"_json_pointer)
+                            && json.contains("/camera/2"_json_pointer) && json.contains("/camera/3"_json_pointer)) , "Entity Save File Corrupt");
             deserializeCamPos(entity , json);
         }
 
@@ -106,6 +116,10 @@ namespace machy {
         pos.pos.x = json["/position/0"_json_pointer].get<float>();
         pos.pos.y = json["/position/1"_json_pointer].get<float>(); 
         pos.pos.z = json["/position/2"_json_pointer].get<float>();
+
+        pos.rotation.x = json["/rotation/0"_json_pointer].get<float>();
+        pos.rotation.y = json["/rotation/1"_json_pointer].get<float>();
+        pos.rotation.z = json["/rotation/2"_json_pointer].get<float>();
 
         pos.size.x = json["/size/0"_json_pointer].get<float>();
         pos.size.y = json["/size/1"_json_pointer].get<float>(); 
@@ -121,20 +135,47 @@ namespace machy {
         auto& shaders = context->getShaderLib();
         auto& mats = context->getMatLib();
 
-        sprite.skeleton = meshes.get("Skeleton");
+        sprite.color.r = json["/sprite/0"_json_pointer].get<float>();
+        sprite.color.g = json["/sprite/1"_json_pointer].get<float>();
+        sprite.color.b = json["/sprite/2"_json_pointer].get<float>();
 
-        int num = (int)mats.getAllAssets().size() + 1;
-        std::string name = "Mat" + std::to_string(num);
-        std::shared_ptr<graphics::Material> newMat = std::make_shared<graphics::Material>(shaders.get("Basic"));
-        mats.load(name , newMat);
+        if (json.contains("/meshname"_json_pointer)) {
+            std::string meshname = json["/meshname"_json_pointer].get<std::string>();
+            if (context->getVertLib().exists(meshname)) {
+                sprite.skeleton = meshes.get(meshname);
+                sprite.meshName = meshname;
+            } else {
+                MACHY_WARN("[ENTITY LOAD ERROR] Requested Mesh Not Found In Context | Default Loaded Instead");
+                sprite.skeleton = meshes.get("Skeleton");
+                sprite.meshName = "Skeleton";
+            }
+        } else {
+            sprite.skeleton = meshes.get("Skeleton");
+            sprite.meshName = "Skeleton";
+        }
 
-        sprite.material = newMat;
-
-        sprite.color.r = json["/color/0"_json_pointer].get<float>();
-        sprite.color.g = json["/color/1"_json_pointer].get<float>();
-        sprite.color.b = json["/color/2"_json_pointer].get<float>();
-
-        // sprite
+        if (json.contains("/matname"_json_pointer)) {
+            std::string matname = json["/matname"_json_pointer].get<std::string>();
+            if (context->getMatLib().exists(matname)) {
+                sprite.material = context->getMatLib().get(matname);
+                sprite.matName = matname;
+            } else {
+                MACHY_WARN("[ENTITY LOAD ERROR] Requested Sprite Not Found In Context | Default Loaded Instead");
+                std::shared_ptr<graphics::Material> newMat = std::make_shared<graphics::Material>(shaders.get("Basic"));
+                int num = (int)mats.getAllAssets().size() + 1;
+                std::string name = "Mat" + std::to_string(num);
+                mats.load(name , newMat);
+                sprite.material = newMat;
+                sprite.matName = name;
+            }
+        } else {
+            std::shared_ptr<graphics::Material> newMat = std::make_shared<graphics::Material>(shaders.get("Basic"));
+            int num = (int)mats.getAllAssets().size() + 1;
+            std::string name = "Mat" + std::to_string(num);
+            mats.load(name , newMat);
+            sprite.material = newMat;
+            sprite.matName = name;
+        }
 
         sprite.material->setUniformValue("inColor" , sprite.color);
 
@@ -147,7 +188,7 @@ namespace machy {
         cam.camera->setHeight(json["/camera/2"_json_pointer].get<float>());
         cam.cameraPos.x = json["/camera/0"_json_pointer].get<float>();
         cam.cameraPos.y = json["/camera/1"_json_pointer].get<float>();
-        cam.cameraPos.z = json["/camera/2"_json_pointer].get<float>();
+        cam.cameraPos.z = cam.camera->getHeight();
         cam.cameraRotation = json["/camera/3"_json_pointer].get<float>();
         cam.camera->setViewMat(cam.cameraPos , cam.cameraRotation);
 
@@ -164,10 +205,8 @@ namespace machy {
         json["scene"] = context->getName();
         json["scenepath"] = context->getPath();
         json["numents"] = context->getNumEnts();
-
-        auto& verts = context->getVertLib();
-        auto& shaders = context->getShaderLib();
-        auto& materials = context->getMatLib();
+        json["numshaders"] = context->getShaderLib().getAllAssets().size();
+        json["numtextures"] = context->getTextureLib().getAllAssets().size();
 
         int i = 0;
         std::vector<std::string> entPaths;
@@ -196,7 +235,7 @@ namespace machy {
     }
 
     std::shared_ptr<game::Scene> GameSceneSerializer::deserialize(const std::string& filepath) {
-        
+
         context = std::make_shared<game::Scene>();
 
         std::ifstream file(filepath , std::ios::app);
@@ -209,6 +248,7 @@ namespace machy {
         
         if (json.contains("scene")) {
             context->setSceneName(json["scene"]);
+            MACHY_ASSERT(json.contains("scenepath") , "Scene File is Missing Data");
             context->setScenePath(json["scenepath"]);
             if (json.contains("numents"))
                 numEntsInScene = json["numents"].get<int>();
@@ -221,6 +261,7 @@ namespace machy {
                 std::string path = json[tag].get<std::string>();
 
                 deserializeEnt(path);
+                MACHY_INFO("Successful File Read");
             }
 
         }

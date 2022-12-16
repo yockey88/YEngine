@@ -1,5 +1,7 @@
 #include "sceneSettings.hpp"
 
+#include "scripts/playerScript.hpp"
+
 #include "Game/scene.hpp"
 #include "Game/sceneSerializer.hpp"
 #include "Game/Entity/entity.hpp"
@@ -21,7 +23,6 @@ namespace machy {
     void SceneSettingGUI::setContext(const std::shared_ptr<game::Scene>& scene) {
         sceneContext = scene;
         selectionContext = sceneContext->getNullEnt();
-        entToDelete = sceneContext->getNullEnt();
     }
 
     void SceneSettingGUI::drawEntNode(game::Entity& ent , EditorState& state) {
@@ -35,22 +36,15 @@ namespace machy {
             if (ImGui::IsItemClicked())
                 selectionContext = ent;
 
-            bool deleteEnt = false;
             if (ImGui::BeginPopupContextItem()) {
 
                 if (ImGui::MenuItem("Delete Entity")) 
-                    deleteEnt = true;
+                    deletedEntities.push(ent);
 
                 ImGui::EndPopup();
             }
             
             ImGui::TreePop();
-
-            if (deleteEnt) {
-                sceneContext->destroyEntity(selectionContext);
-                if (selectionContext == ent)
-                    selectionContext = sceneContext->getNullEnt();
-            }
         }
 
         return;
@@ -59,6 +53,28 @@ namespace machy {
     void SceneSettingGUI::drawComponents() {
 
         if (selectionContext == sceneContext->getNullEnt()) return;
+        if (ImGui::Button("Add Component"))
+            ImGui::OpenPopup("AddComponent");
+
+        if (ImGui::BeginPopup("AddComponent")) {
+            addComponentEntry<game::PositionComponent>("Position");
+            addComponentEntry<game::RenderComponent>("Sprite");
+            addComponentEntry<game::CameraComponent>("Camera");
+
+            ImGui::EndPopup();
+        }
+        
+        if (ImGui::Button("Delete Component"))
+            ImGui::OpenPopup("DeleteComponent");
+
+        if (ImGui::BeginPopup("DeleteComponent")) {
+            deleteComponentEntry<game::PositionComponent>("Position");
+            deleteComponentEntry<game::RenderComponent>("Sprite");
+            deleteComponentEntry<game::CameraComponent>("Camera");
+
+            ImGui::EndPopup();
+        }
+
         if (selectionContext.HasComponent<game::EntityID>()) {
             auto& id = sceneContext->Entts().get<game::EntityID>(selectionContext.get());
 
@@ -70,16 +86,13 @@ namespace machy {
                 id.name = std::string(buffer);
 
         }
-        ImGui::SameLine();
-        if (ImGui::Button("Add Component"))
-            ImGui::OpenPopup("AddComponent");
 
-        if (ImGui::BeginPopup("AddComponent")) {
-            addComponentEntry<game::PositionComponent>("Position");
-            addComponentEntry<game::RenderComponent>("Sprite");
-            addComponentEntry<game::CameraComponent>("Camera");
+        if (selectionContext.HasComponent<game::PositionComponent>() && !selectionContext.HasComponent<game::CameraComponent>()) {
+            auto& pos = sceneContext->Entts().get<game::PositionComponent>(selectionContext.get());
 
-            ImGui::EndPopup();
+            ImGui::DragFloat2("Entity Position" , glm::value_ptr(pos.pos) , 0.02f);
+            ImGui::DragFloat3("Entity Rotation" , glm::value_ptr(pos.rotation) , 0.02f);
+            ImGui::DragFloat2("Entity Size" , glm::value_ptr(pos.size) , 0.02f);
         }
 
         if (selectionContext.HasComponent<game::RenderComponent>()) {
@@ -87,7 +100,6 @@ namespace machy {
 
             ImGui::ColorEdit3("Sprite Color" , glm::value_ptr(sprite.color));
             sprite.material->setUniformValue("inColor" , sprite.color);
-
             
             bool selected = false; 
             std::string chosenName;
@@ -101,19 +113,14 @@ namespace machy {
                     }
                 }
 
-                if (selected)
+                if (selected) {
                     sprite.material = sceneContext->getMatLib().get(chosenName);
+                    sprite.matName = chosenName;
+                }
 
                 ImGui::TreePop();
             }
 
-        }
-
-        if (selectionContext.HasComponent<game::PositionComponent>()) {
-            auto& pos = sceneContext->Entts().get<game::PositionComponent>(selectionContext.get());
-
-            ImGui::DragFloat2("Entity Position" , glm::value_ptr(pos.pos) , 0.02f);
-            ImGui::DragFloat2("Entity Size" , glm::value_ptr(pos.size) , 0.02f);
         }
 
         if (selectionContext.HasComponent<game::CameraComponent>()) {
@@ -140,15 +147,40 @@ namespace machy {
 
             if (std::is_same_v<T , game::RenderComponent>) {
                 auto& sprite = sceneContext->Entts().get<game::RenderComponent>(selectionContext.get());
+                if (!selectionContext.HasComponent<game::PositionComponent>())
+                    selectionContext.AddComponent<game::PositionComponent>();
 
                 sprite.skeleton = sceneContext->getVertLib().get("Skeleton");
+                sprite.meshName = "Skeleton";
                 
                 std::shared_ptr<graphics::Material> newMat = std::make_shared<graphics::Material>(sceneContext->getShaderLib().get("Basic"));
                 int numMats = (int)sceneContext->getMatLib().getAllAssets().size() + 1;
                 std::string name = "Mat" + std::to_string(numMats);
+                sprite.matName = name;
+                sprite.material = newMat;
                 sceneContext->getMatLib().load(name , newMat);
+            }
 
-                sprite.material = sceneContext->getMatLib().get(name);
+            if (std::is_same_v<T , game::CameraComponent> && !selectionContext.HasComponent<game::PositionComponent>()) 
+                selectionContext.AddComponent<game::PositionComponent>();
+
+            ImGui::CloseCurrentPopup();
+        }
+
+        return;
+    }
+
+    template <typename T>
+    void SceneSettingGUI::deleteComponentEntry(const std::string& entryname) {
+
+        if (!selectionContext.HasComponent<T>()) 
+            return;
+
+        if (ImGui::MenuItem(entryname.c_str())) {
+            selectionContext.RemoveComponent<T>();
+
+            if (std::is_same_v<T , game::PositionComponent> && selectionContext.HasComponent<game::RenderComponent>()) {
+                selectionContext.RemoveComponent<game::RenderComponent>();
             }
 
             ImGui::CloseCurrentPopup();
@@ -160,18 +192,23 @@ namespace machy {
     void SceneSettingGUI::GuiRender(EditorState& state) {
         if (ImGui::Begin("Scene Settings")) {
             if (sceneContext != nullptr) {
-                ImGui::Text(sceneContext->getPath().c_str());
-                ImGui::Text(std::to_string(sceneContext->getNumEnts()).c_str());
+                ImVec4 col1{ 0 , 1 , 0 , 1 };
+                ImVec4 col2{ 0 , 1 , 1 , 1 };
+                ImGui::TextColored(col1 , sceneContext->getPath().c_str());
+                ImGui::TextColored(col2 , std::to_string(sceneContext->getNumEnts()).c_str());
                 
                 memset(buffer , 0 , sizeof(buffer));
                 strcpy_s(buffer , sceneContext->getName().c_str());
-                if (ImGui::InputText("Scene Name" , buffer , sizeof(buffer)))
+                if (ImGui::InputText("Scene Name" , buffer , sizeof(buffer))) {
                     sceneContext->setSceneName(std::string(buffer));
+
+                    std::string path = "resources/scenes/" + sceneContext->getName() + ".json";
+                    sceneContext->setScenePath(path);
+                }
 
                 if (ImGui::BeginPopupContextWindow(0 , 1)) {
                     if (ImGui::MenuItem("Create Empty Entity")) {
                         sceneContext->createEnt();
-                        state.queueAction(UpdateAction::sceneSwitch);
                     }
 
                     ImGui::EndPopup();
@@ -195,6 +232,25 @@ namespace machy {
         }
         ImGui::End();
 
+    }
+
+    void SceneSettingGUI::flushDeletions() {
+       
+        if (deletedEntities.size() > 0) {
+            while (deletedEntities.size() != 0) {
+                game::Entity ent = deletedEntities.front();
+                deletedEntities.pop();
+
+                sceneContext->destroyEntity(ent);
+
+                if (selectionContext == ent) 
+                    selectionContext = sceneContext->getNullEnt();
+            }
+        }
+
+        MACHY_ASSERT(deletedEntities.size() == 0 , "Entity Deletions Failed");
+
+        return;
     }
 
 

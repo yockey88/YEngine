@@ -1,0 +1,9 @@
+{
+    "entpath0": "resources/scenes/entities/sprite.json",
+    "entpath1": "resources/scenes/entities/camera.json",
+    "numents": 2,
+    "numshaders": 2,
+    "numtextures": 0,
+    "scene": "testing",
+    "scenepath": "resources/scenes/testing.json"
+}

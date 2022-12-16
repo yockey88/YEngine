@@ -5,8 +5,7 @@
 
 #include "box2d.h"
 
-#include "core/editorState.hpp"
-#include "gui/editorGUI.hpp"
+#include "core/editor.hpp"
 #include "scripts/playerScript.hpp"
 
 #include "Core/fileSystem.hpp"
@@ -22,54 +21,48 @@
 
 #include "imgui.h"
 
-namespace machy {
+namespace machy {	
+
+	/// Callbacks
 	
 class Dev : public App {
-	std::shared_ptr<game::Scene> scene;
 
-	EditorState currState;
-	EditorGUI editor;
+	GameEditor editor;
 
 	/* SEE BENEATH THE CLASS DECLARATION FOR HELPER FUNCTION DOCUMENTATION */
 	/* Initialization Helpers */
 	core::WindowProperties setWinProps();
 	public:
 		Dev() {}
+		Dev(const Dev&) = delete;
 
 		virtual core::WindowProperties GetWindowProperties() override { return setWinProps(); }
 
 		virtual void Initialize() override {
 
-			scene = std::make_shared<game::Scene>();
-			scene->setScenePath("resources/scenes/devScene.json");
-			editor.setSceneContext(scene);
+			editor.CreateEditorContext();
 			return;
 		}
 
 		virtual void Shutdown() override { return; }
 
 		virtual void Update(const float& dt) override {
-			currState.tickTimer();
-			currState.checkInputs();
-			if (currState.isSwappingScenes()) {
-				scene = editor.getContext();
-				editor.setSceneContext(scene);
-				currState.scenesSwapped();
-			}
-			scene->update();
+			
+			editor.UpdateEditor();
+
 			return;
 		}
 
 		virtual void Render() override {
-			scene->render();
+			editor.RenderEditorCam();
+			editor.SceneRender();
+			editor.FlushCams();
 			return;
 		}
 
 		virtual void ImGuiRender() override {
-			if (!currState.isShowingGui()) return;
-			editor.RenderEditor(currState);
-
-			// ImGui::ShowDemoWindow();
+			if (!editor.getState().isShowingGui()) return;
+			editor.RenderEditor();
 			return;
 		}
 };

@@ -15,14 +15,16 @@ namespace graphics {
     }
 
     Camera::Camera() 
-      : projMatrix(1.f) , viewMatrix(1.f) , aspectRatio(16.f / 9.f) , height(1080.f) , close(0.f) , mFar(100.f) {
+      : activeMode(CameraMode::ortho) , projMatrix(1.f) , viewMatrix(1.f) ,
+        aspectRatio(16.f / 9.f) , height(1080.f) , fov(45.f) , pitch(0.f) , yaw(0.f) ,
+        close(0.f) , mFar(100.f) {
 
         recalculateProjMatrix();
 
     }   
 
     Camera::Camera(const Camera& other)
-      : projMatrix(other.projMatrix) , viewMatrix(other.viewMatrix) , aspectRatio(other.aspectRatio) ,
+      : activeMode(other.activeMode) , projMatrix(other.projMatrix) , viewMatrix(other.viewMatrix) , aspectRatio(other.aspectRatio) ,
         height(other.height) , close(other.close) , mFar(other.mFar) {
         
         recalculateProjMatrix();
@@ -78,6 +80,33 @@ namespace graphics {
             recalculateProjMatrix();
         }
 
+        return;
+    }
+
+    void Camera::setFOV(float fov) {
+
+        if (this->fov != fov) {
+            this->fov = fov;
+            recalculateProjMatrix();
+        }
+
+    }
+
+    void Camera::setPos(const glm::vec3& pos) {
+
+        if (this->pos != pos) {
+            this->pos = pos;
+            recalculateProjMatrix();
+        }
+
+        return;
+    }
+
+    void Camera::setTarget(const glm::vec3& target) {
+        return;
+    }
+
+    void Camera::setUp(const glm::vec3& up) {
         return;
     }
 

@@ -7,7 +7,7 @@
 namespace machy {
 namespace game {
 
-    Scene::Scene() : numEnts(0) , name("{Blank Scene}")  {
+    Scene::Scene() : numEnts(0) , totalEntsCreated(0) , playing(false) , name("{Blank Scene}")  {
         Entity nullEnt;
         nullEnt.handle = entt::null;
 
@@ -47,7 +47,12 @@ namespace game {
         entRegistry.each([&] (auto entity) { entRegistry.destroy(entity); });
     }
 
-    void Scene::update() {
+    void Scene::updateFromEditor() {
+
+        return;
+    }
+
+    void Scene::updateRuntime() {
         entRegistry.view<NativeScript>().each([=](auto entity , auto& script) {
                 if (script.instance == nullptr) {
                     script.instance = script.BindScript();
@@ -62,31 +67,36 @@ namespace game {
     }
 
     void Scene::render()  {
-        auto cameras = entRegistry.view<CameraComponent>();
+        
         auto sprites = entRegistry.view<RenderComponent , PositionComponent>();
+        auto cameras = entRegistry.view<CameraComponent>();
 
-        if (cameras.size() > 0)
-            for (auto& ent : cameras)
-                if (entRegistry.valid(ent)) {
-                    auto& cam = cameras.get<CameraComponent>(ent);
-                    MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , cam.camera));
-                }
+        if (playing) {
+            if (cameras.size() > 0)
+                for (auto& ent : cameras)
+                    if (entRegistry.valid(ent)) {
+                        auto& cam = cameras.get<CameraComponent>(ent);
+                        MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , cam.camera));
+                    }
+        }
 
         for (const auto ent : sprites) {
             if (entRegistry.valid(ent)) {
                 auto& renderable = sprites.get<RenderComponent>(ent);
                 auto& position = sprites.get<PositionComponent>(ent);
 
-                glm::mat4 model = glm::mat4(1.f);
-                model = glm::translate(model , position.pos);
-                model = glm::scale(model , position.size);
+                glm::mat4 model = position.getModel();
                 if (renderable.skeleton.get() != nullptr && renderable.material.get() != nullptr)
                     MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , renderable.skeleton , renderable.material , model));
             }
         }
 
-        for (unsigned long i = 0; i < cameras.size(); i++) {
-            MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
+        if (playing) {
+            if (cameras.size() > 0)
+                for (auto& ent : cameras)
+                    if (entRegistry.valid(ent)) {
+                        MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
+                    }
         }
 
         return;
@@ -97,8 +107,11 @@ namespace game {
         newEnt.setContext(this);
 
         auto& id = entRegistry.emplace<EntityID>(newEnt.get());
+
         numEnts++;
-        id.ID = numEnts;
+        totalEntsCreated++;
+
+        id.ID = totalEntsCreated;
         id.name = name;
 
         entities[id.ID] = newEnt;
@@ -106,14 +119,12 @@ namespace game {
         return newEnt;
     }
 
-    // Entity createNullEnt() {
-    //     Entity ent(entt::null);
-    //     return ent;
-    // }
-
     void Scene::destroyEntity(Entity& ent) {
-        entRegistry.destroy(ent.get());
-        numEnts--;
+        if (entRegistry.valid(ent.get())) {
+            entRegistry.destroy(ent.get());
+            ent.nullify();
+            numEnts--;
+        }
         return;
     }
 
@@ -123,9 +134,21 @@ namespace game {
             if (entRegistry.valid(entItr.second.get())) {
                 auto& id2 = entRegistry.get<EntityID>(entItr.second.get());
                 if (id2.ID == id1.ID) {
-                    return entities[id2.ID];
+                    return entities[id1.ID];
                 }
             }
+
+        return entities[0];
+    }
+
+    Entity& Scene::getMainCameraEntity() {
+        auto view = entRegistry.view<game::EntityID , game::CameraComponent>();
+        for (auto ent : view) {
+            const auto& id = view.get<game::EntityID>(ent);
+            const auto& camera = view.get<game::CameraComponent>(ent);
+            if (camera.camera != nullptr)
+                return entities[id.ID];
+        }
 
         return entities[0];
     }

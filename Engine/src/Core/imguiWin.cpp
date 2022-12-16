@@ -6,6 +6,8 @@
 #include "imgui_impl_sdl.h"
 #include "imgui_impl_opengl3.h"
 
+#include "ImGuizmo.h"
+
 #include <stdlib.h>
 #include <iostream>
 
@@ -50,6 +52,7 @@ namespace machy::core {
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame(MachY::Instance().getWindow().getSDLWindow());
         ImGui::NewFrame();
+        ImGuizmo::BeginFrame();
 
         return;
     }

@@ -22,6 +22,8 @@ workspace "MachineY"
     externals["stb"] = "external/stb"
     externals["ImEntt"] = "external/ImEnttComponent"
     externals["json"] = "external/json"
+    externals["boost"] = "external/boost"
+    externals["imguizmo"] = "external/imguizmo"
 
     -- Glad before all
     include "external/glad"
@@ -53,7 +55,9 @@ workspace "MachineY"
             "%{externals.glm}/**.hpp",
             "%{externals.stb}/*.h",
             "%{externals.ImEntt}/*.hpp",
-            "%{externals.json}/**.hpp"
+            "%{externals.json}/**.hpp",
+            "%{externals.imguizmo}/**.h",
+            "%{externals.imguizmo}/**.cpp"
         }
 
         externalincludedirs {
@@ -67,7 +71,8 @@ workspace "MachineY"
             "%{externals.glm}",
             "%{externals.stb}",
             "%{externals.ImEntt}",
-            "%{externals.json}/include"
+            "%{externals.json}/include",
+            "%{externals.imguizmo}"
         }
 
         flags { "FatalWarnings" }
@@ -156,7 +161,8 @@ workspace "MachineY"
             "%{externals.glm}",
             "%{externals.stb}",
             "%{externals.ImEntt}",
-            "%{externals.json}/include"
+            "%{externals.json}/include",
+            "%{externals.imguizmo}"
         }
 
         flags { "FatalWarnings" }
@@ -252,7 +258,8 @@ workspace "MachineY"
             "%{externals.glm}",
             "%{externals.stb}",
             "%{externals.ImEntt}",
-            "%{externals.json}/include"
+            "%{externals.json}/include",
+            "%{externals.imguizmo}"
         }
 
         flags { "FatalWarnings" }
@@ -350,7 +357,8 @@ workspace "MachineY"
             "%{externals.glm}",
             "%{externals.stb}",
             "%{externals.ImEntt}",
-            "%{externals.json}/include"
+            "%{externals.json}/include",
+            "%{externals.imguizmo}/src"
         }
 
         flags { "FatalWarnings" }

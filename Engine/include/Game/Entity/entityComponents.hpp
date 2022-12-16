@@ -10,6 +10,8 @@
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/gtx/quaternion.hpp>
 
 #include <stdint.h>
 
@@ -28,10 +30,16 @@ namespace game {
     };
 
     struct PositionComponent {
-        glm::vec3 pos , size;
-        glm::vec2 pos2D;
+        glm::vec3 pos , size , rotation;
 
-        PositionComponent() : pos(glm::vec3(0.f)) , size(glm::vec3(1.f)) , pos2D(glm::vec2(0.f)) {}
+        PositionComponent() : pos(glm::vec3(0.f)) , size(glm::vec3(1.f)) , rotation(glm::vec3(0.f)) {}
+
+        glm::mat4 getModel() {
+            glm::mat4 rot = glm::toMat4(glm::quat(rotation));
+            glm::mat4 model = glm::mat4(1.f);
+            model = glm::translate(model , pos) * rot * glm::scale(model , size);
+            return model;
+        }
     };
 
     struct RenderComponent {
@@ -44,18 +52,52 @@ namespace game {
         RenderComponent(const RenderComponent&) = default;
         RenderComponent(std::shared_ptr<graphics::VertexArray> skeleton , std::shared_ptr<graphics::Material> material) 
             : skeleton(skeleton) , material(material) , color(glm::vec3(0.f)) {}
+
+        void SetMaterial(std::shared_ptr<Scene> entContext , const std::string& VertName = "Skeleton" , const std::string& MatName = "Basic") {
+            if (entContext->getVertLib().exists(VertName))
+                skeleton = entContext->getVertLib().get(VertName);
+
+            if (entContext->getMatLib().exists(MatName))
+                material = entContext->getMatLib().get(MatName);
+        }
     };
+
+    // struct RenderComponent {
+    //     std::shared_ptr<graphics::VertexArray> skeleton;
+    //     std::shared_ptr<graphics::Material> material;
+    //     // glm::vec3 color;
+    //     // std::string meshName , matName;
+
+    //     // RenderComponent() = default;
+    //     // RenderComponent(const RenderComponent&) = default;
+    //     // RenderComponent(std::shared_ptr<graphics::VertexArray> skeleton , std::shared_ptr<graphics::Material> material) 
+    //     //     : skeleton(skeleton) , material(material) , color(glm::vec3(0.f)) {}
+
+    //     // void SetMaterial(std::shared_ptr<Scene> entContext , const std::string& VertName = "Skeleton" , const std::string& MatName = "Basic") {
+    //     //     if (entContext->getVertLib().exists(VertName))
+    //     //         skeleton = entContext->getVertLib().get(VertName);
+
+    //     //     if (entContext->getMatLib().exists(MatName))
+    //     //         material = entContext->getMatLib().get(MatName);
+    //     // }
+    // };
 
     struct NativeScript {
         ScriptedEntity* instance = nullptr;
+        bool bound;
 
         ScriptedEntity*(*BindScript)();
         void (*DestroyScript)(NativeScript*);
+        
+        NativeScript() : instance(nullptr) , bound(false) {}
+        ~NativeScript() { DestroyScript(this); }
 
         template <typename T>
         void Bind() {
             BindScript = []() { return static_cast<ScriptedEntity*>( new T() ); };
             DestroyScript = [](NativeScript* script) { delete script->instance; script->instance = nullptr; };
+
+            bound = true;
         }
     };
 

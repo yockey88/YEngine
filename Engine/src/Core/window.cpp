@@ -45,8 +45,8 @@ namespace machy::core {
 		vertArray->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
 		vertArray->upload();
 
-		vShader = util::readShaderFile("resources/shaders/basic_camera_shader.vert");
-		fShader = util::readShaderFile("resources/shaders/basic_camera_shader.frag");
+		vShader = util::readShaderFile("resources/shaders/window_shader.vert");
+		fShader = util::readShaderFile("resources/shaders/window_shader.frag");
 		shader = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
 
 		return;

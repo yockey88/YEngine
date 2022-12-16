@@ -15,6 +15,7 @@ namespace core {
 
     class FileSystem {
         public:
+            // static std::string getSceneNameFromFile(const std::string& path )
     };
 
     

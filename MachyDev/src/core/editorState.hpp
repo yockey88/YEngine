@@ -20,8 +20,6 @@ namespace machy {
         bool showingControls , showingLibs , showingDebug;
         bool showingSceneBrowser , showingAssetBrowser , showingGameView;
 
-        bool swappingScenes;
-
         float currFrameLength;
 
         void setToDefault();
@@ -51,9 +49,6 @@ namespace machy {
             inline bool isShowingSceneBrowser() const { return showingSceneBrowser; }
             inline bool isShowingAssetBrowser() const { return showingAssetBrowser; }
             inline bool isShowingGameView() const { return showingGameView; }
-
-            inline void scenesSwapped() { MACHY_ASSERT(swappingScenes , "Attempted Invalid Scene Swap"); swappingScenes = false; }
-            inline bool isSwappingScenes() const { return swappingScenes; }
     };
 
 }

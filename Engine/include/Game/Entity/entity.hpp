@@ -17,12 +17,13 @@ namespace game {
     class Entity {
         Scene* scene;
         entt::entity handle;
+        bool null;
 
         friend class Scene;
 
         public:
-            Entity() : scene(nullptr) , handle(entt::null) {}
-            Entity(entt::entity handle) : scene(nullptr) , handle(handle) {}
+            Entity() : scene(nullptr) , handle(entt::null) , null(true) {}
+            Entity(entt::entity handle) : scene(nullptr) , handle(handle) , null(false) {}
             Entity(const Entity& other) { handle = other.handle; scene = other.scene; };
 
            template<typename T, typename... Args>
@@ -56,6 +57,8 @@ namespace game {
             }
 
             inline entt::entity& get() { return handle; }
+            inline bool isNotNull() const { return !null; }
+            inline void nullify() { null = true; }
             inline void setContext(Scene* context) { scene = context; }
 
             bool operator==(const Entity& other) { return ((handle == other.handle) && (scene == other.scene)); }
