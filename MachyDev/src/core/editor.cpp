@@ -21,19 +21,20 @@
 
 #include <string>
 #include <filesystem>
+#include <stdint.h>
 
 static char buffer[512];
 static std::string scenePath = "resources/scenes";
 static std::string shaderPath = "resources/shaders";
 static std::string characterSpritePath = "resources/sprites/characters";
 static std::string objectSpritePath = "resources/sprites/objects";
-static std::string tilesetPath = "resources/sprites/tileset";
+static std::string tilesetPath = "resources/sprites/tilesets";
 
 namespace machy {
 
     GameEditor::GameEditor() {
         activeOp = ImGuizmo::OPERATION::TRANSLATE;
-        renderingEditorCam = true;
+        renderingEditorCam = false;
         editorCam = std::make_shared<graphics::Camera>();
     }
 
@@ -73,16 +74,8 @@ namespace machy {
                 ImGui::EndChild();
 
                 if (selected) {
-                    GameSceneSerializer serializer(context);
-                    if (context->getName() !="{Blank Scene}") {
-                        std::string path = "resources\\scenes\\" + context->getName() + ".json";
-                        MACHY_INFO("Saving Scene -> <{}>" , path);
-                        serializer.serialize(path);
-                    }
-
-                    MACHY_INFO("Loading Scene -> <{}>" , sceneSelectContext);
-                    context = serializer.deserialize(sceneSelectContext);
-                    setSceneContext(context);
+                    core::FileSystem::saveScene(context);
+                    setSceneContext(core::FileSystem::loadScene(sceneSelectContext));
                 }
 
             }
@@ -112,11 +105,11 @@ namespace machy {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu("File")) {
-                GameSceneSerializer serializer(context);
+                SceneSerializer serializer(context);
                 if (ImGui::MenuItem("Save Scene")) 
                     serializer.serialize(path);
                 if (ImGui::MenuItem("Create Blank Scene")) {
-                    GameSceneSerializer serializer(context);
+                    SceneSerializer serializer(context);
                     serializer.serialize(path);
                     context = std::make_shared<game::Scene>();
                     setSceneContext(context);
@@ -151,12 +144,25 @@ namespace machy {
                 bool selected = false;
                 for (const auto entry : std::filesystem::directory_iterator(characterSpritePath)) {
                     if (!entry.is_directory()) {
+
                         std::filesystem::path path = entry.path();
                         path = path.make_preferred();
                         std::string name = path.filename().string();
-                        if (path.extension().string() == ".png")
-                            if (ImGui::Selectable(name.c_str() , &selected)) 
+
+                        if (path.extension().string() == ".png") {
+                            
+                            if (ImGui::Selectable(name.c_str() , &selected))
                                 assetSelectContext = path.string();
+                            
+                            if (ImGui::BeginDragDropSource()) {
+                                const wchar_t* itemPath = path.relative_path().c_str();
+                                assetSelectContext = path.string();
+                                ImGui::SetDragDropPayload("CHARACTER_SPRITE_DRAG_ITEM" , itemPath , (wcslen(itemPath) + 1) * sizeof(wchar_t) , ImGuiCond_Once);
+                                ImGui::EndDragDropSource();
+                            }
+                        
+                        }
+
                     }
                 }
 
@@ -164,10 +170,52 @@ namespace machy {
             }
 
             if (ImGui::TreeNode("ObjectSprites")) {
+                bool selected = false;
+                for (const auto entry : std::filesystem::directory_iterator(objectSpritePath)) {
+                    if (!entry.is_directory()) {
+                        std::filesystem::path path = entry.path();
+                        path = path.make_preferred();
+                        std::string name = path.filename().string();
+                        if (path.extension().string() == ".png") {
+                            
+                            if (ImGui::Selectable(name.c_str() , &selected)) 
+                                assetSelectContext = path.string();
+                            
+                            if (ImGui::BeginDragDropSource()) {
+                                const wchar_t* itemPath = path.relative_path().c_str();
+                                assetSelectContext = path.string();
+                                ImGui::SetDragDropPayload("CHARACTER_SPRITE_DRAG_ITEM" , itemPath , (wcslen(itemPath) + 1) * sizeof(wchar_t) , ImGuiCond_Once);
+                                ImGui::EndDragDropSource();
+                            }
+                        }
+                    }
+                }
+
                 ImGui::TreePop();
             }
 
             if (ImGui::TreeNode("TileSets")) {
+                bool selected = false;
+                for (const auto entry : std::filesystem::directory_iterator(tilesetPath)) {
+                    if (!entry.is_directory()) {
+                        std::filesystem::path path = entry.path();
+                        path = path.make_preferred();
+                        std::string name = path.filename().string();
+                        if (path.extension().string() == ".png") {
+                            
+                            if (ImGui::Selectable(name.c_str() , &selected)) 
+                                assetSelectContext = path.string();
+
+                            if (ImGui::BeginDragDropSource()) {
+                                const wchar_t* itemPath = path.relative_path().c_str();
+                                assetSelectContext = path.string();
+                                ImGui::SetDragDropPayload("CHARACTER_SPRITE_DRAG_ITEM" , itemPath , (wcslen(itemPath) + 1) * sizeof(wchar_t) , ImGuiCond_Once);
+                                ImGui::EndDragDropSource();
+                            }
+                        }
+                    }
+                }
+
                 ImGui::TreePop();
             }
 
@@ -232,6 +280,21 @@ namespace machy {
                     auto& pos = selected.GetComponent<game::PositionComponent>();
                     entCam.cameraPos = pos.pos;
                     entCam.camera->setViewMat(entCam.cameraPos , entCam.cameraRotation);
+                }
+            }
+
+            if (ImGui::BeginDragDropTarget()) {
+                auto payload = ImGui::GetDragDropPayload();
+                if (payload != nullptr) {
+
+                    auto& matLib = context->getMatLib();
+                    auto& shaderlib = context->getShaderLib();
+
+                    std::shared_ptr<graphics::Shader> s = shaderlib.get("Texture");
+                    std::shared_ptr<graphics::Texture> txt = std::make_shared<graphics::Texture>(assetSelectContext);
+                    std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(s , txt);
+
+                    matLib.load("TextureMaterial" , mat);
                 }
             }
         }

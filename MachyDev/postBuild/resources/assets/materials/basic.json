@@ -1,0 +1,9 @@
+{
+    "Matname": "basic",
+    "Matpath": "resources/assets/materials/basic.json",
+    "Shaders": [
+        "resources/assets/shaders/basic_camera_shader.vert",
+        "resources/assets/shaders/basic_camera_shader.frag"
+    ],
+    "Texture": "null"
+}

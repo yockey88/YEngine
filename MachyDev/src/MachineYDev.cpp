@@ -1,7 +1,6 @@
 #include "machy.hpp"
 #include "app.hpp"
 #include "main.hpp"
-#include "util.hpp"
 
 #include "box2d.h"
 

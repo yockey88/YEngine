@@ -1,6 +1,6 @@
 #include "machy.hpp"
-#include "util.hpp"
 #include "Core/window.hpp"
+#include "Core/fileSystem.hpp"
 #include "Graphics/framebuffer.hpp"
 #include "Graphics/vertex.hpp"
 #include "Graphics/shader.hpp"
@@ -14,6 +14,10 @@
 #include "glm/gtc/matrix_transform.hpp"
 
 #include <iostream>
+
+static std::string winFBVertPath = "resources/assets/meshes/winFBMesh.csv";
+static std::string winVShaderPath = "resources/assets/shaders/window_shader.vert";
+static std::string winFShaderPath = "resources/assets/shaders/window_shader.frag";
 
 namespace machy::core {
 
@@ -32,22 +36,8 @@ namespace machy::core {
 
 	void Window::initializeScrnRender() {
 
-		vertArray = std::make_shared<graphics::VertexArray>();
-		{
-			MACHY_CREATE_VERTEX_BUFFER(vb , short);
-			vb->pushVertex({  1 ,  1  ,  1 , 1 });
-			vb->pushVertex({  1 , -1  ,  1 , 0 });
-			vb->pushVertex({ -1 , -1  ,  0 , 0 });
-			vb->pushVertex({ -1 ,  1  ,  0 , 1 });
-			vb->setLayout({ 2 , 2 });
-			vertArray->pushBuffer(std::move(vb));
-		}
-		vertArray->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
-		vertArray->upload();
-
-		vShader = util::readShaderFile("resources/shaders/window_shader.vert");
-		fShader = util::readShaderFile("resources/shaders/window_shader.frag");
-		shader = std::make_shared<graphics::Shader>(vShader.c_str() , fShader.c_str());
+		vertArray = core::FileSystem::loadVertexFile(winFBVertPath);
+		shader = core::FileSystem::loadShaderFile(winVShaderPath , winFShaderPath);
 
 		return;
 	}

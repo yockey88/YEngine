@@ -7,7 +7,6 @@
 #include "Graphics/shader.hpp"
 #include "Graphics/texture.hpp"
 #include "Graphics/material.hpp"
-#include "util.hpp"
 
 #include "entt.hpp"
 #include "glm/glm.hpp"

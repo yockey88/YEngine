@@ -1,46 +1,39 @@
 #include "Game/scene.hpp"
+#include "Core/fileSystem.hpp"
 #include "Game/Entity/scriptedEntity.hpp"
 #include "Game/Entity/entityComponents.hpp"
 
 #include "machy.hpp"
 
+static std::string sceneBaseMeshPath = "resources/assets/meshes/skeleton.csv";
+static std::string sceneTexMeshPath = "resources/assets/meshes/textrSkeleton.csv";
+
+static std::string baseCamVShader = "resources/assets/shaders/basic_camera_shader.vert";
+static std::string baseCamFShader = "resources/assets/shaders/basic_camera_shader.frag";
+static std::string baseCamCShader = "resources/assets/shaders/basic_circle.frag";
+static std::string baseCamTVShader = "resources/assets/shaders/basic_camera_shader_texture.vert";
+static std::string baseCamTFShader = "resources/assets/shaders/basic_camera_shader_texture.frag";
+
 namespace machy {
 namespace game {
 
-    Scene::Scene() : numEnts(0) , totalEntsCreated(0) , playing(false) , name("{Blank Scene}")  {
+    Scene::Scene() : numEnts(0) , totalEntsCreated(0) , playing(true) , name("{Blank Scene}")  {
         Entity nullEnt;
         nullEnt.handle = entt::null;
 
         entities[0] = nullEnt;
 
-        {
-            std::shared_ptr<graphics::VertexArray> VA = std::make_shared<graphics::VertexArray>();
-            MACHY_CREATE_VERTEX_BUFFER(vb , float);
-            vb->pushVertex({  0.5f ,  0.5f , 0.f });
-            vb->pushVertex({  0.5f , -0.5f , 0.f });
-            vb->pushVertex({ -0.5f , -0.5f , 0.f });
-            vb->pushVertex({ -0.5f ,  0.5f , 0.f });
-            vb->setLayout({ 3 });
-            VA->pushBuffer(std::move(vb));
-            VA->setElements({ 0 , 3 , 1 , 1 , 3 , 2 });
-            VA->upload();
-            MeshLib.load("Skeleton" , VA);
-        }
-        { 
-            std::string vShader = util::readShaderFile("resources/shaders/basic_camera_shader.vert");
-            std::string fShader = util::readShaderFile("resources/shaders/basic_camera_shader.frag");
-            std::string cShader = util::readShaderFile("resources/shaders/basic_circle.frag");
-            std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader , fShader);
-            std::shared_ptr<graphics::Shader> circle = std::make_shared<graphics::Shader>(vShader , cShader);
-            ShaderLib.load("Basic" , shader);
-            ShaderLib.load("Circle" , circle);
-        }
-        {
-            std::shared_ptr<graphics::Material> basic = std::make_shared<graphics::Material>(ShaderLib.get("Basic"));
-            std::shared_ptr<graphics::Material> circle = std::make_shared<graphics::Material>(ShaderLib.get("Circle"));
-            MatLib.load("Basic" , basic);
-            MatLib.load("Circle" , circle);
-        }
+        std::shared_ptr<graphics::VertexArray> VA = core::FileSystem::loadVertexFile(sceneBaseMeshPath);
+        std::shared_ptr<graphics::VertexArray> tVA = core::FileSystem::loadVertexFile(sceneTexMeshPath);
+        MeshLib.load(VA->getName() , VA);
+        MeshLib.load(tVA->getName() , tVA);
+
+        std::shared_ptr<graphics::Shader> shader = core::FileSystem::loadShaderFile(baseCamVShader , baseCamFShader);
+        std::shared_ptr<graphics::Shader> circle = core::FileSystem::loadShaderFile(baseCamVShader , baseCamCShader);
+        std::shared_ptr<graphics::Shader> tshader = core::FileSystem::loadShaderFile(baseCamTVShader , baseCamTFShader);
+        ShaderLib.load("Basic" , shader);
+        ShaderLib.load("Circle" , circle);
+        ShaderLib.load("Texture" , tshader);
     }
 
     Scene::~Scene() {
@@ -82,12 +75,16 @@ namespace game {
 
         for (const auto ent : sprites) {
             if (entRegistry.valid(ent)) {
-                auto& renderable = sprites.get<RenderComponent>(ent);
-                auto& position = sprites.get<PositionComponent>(ent);
+                Entity entity{ ent };
+                entity.setContext(this);
+                if (entity.HasComponent<RenderComponent>() && entity.HasComponent<RenderComponent>()){
+                    auto& renderable = sprites.get<RenderComponent>(ent);
+                    auto& position = sprites.get<PositionComponent>(ent);
 
-                glm::mat4 model = position.getModel();
-                if (renderable.skeleton.get() != nullptr && renderable.material.get() != nullptr)
-                    MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , renderable.skeleton , renderable.material , model));
+                    glm::mat4 model = position.getModel();
+                    if (renderable.skeleton.get() != nullptr && renderable.material.get() != nullptr)
+                        MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(RenderVertexArrayMaterial , renderable.skeleton , renderable.material , model));
+                }
             }
         }
 
@@ -107,6 +104,7 @@ namespace game {
         newEnt.setContext(this);
 
         auto& id = entRegistry.emplace<EntityID>(newEnt.get());
+        auto& pos = entRegistry.emplace<PositionComponent>(newEnt.get());
 
         numEnts++;
         totalEntsCreated++;

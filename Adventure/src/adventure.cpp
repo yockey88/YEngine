@@ -1,9 +1,10 @@
 #include "machy.hpp"
 #include "app.hpp"
 #include "main.hpp"
-#include "util.hpp"
 
 #include "entComps/components.hpp"
+
+#include "Core/fileSystem.hpp"
 
 #include "Game/SceneContainer.hpp"
 #include "Graphics/framebuffer.hpp"
@@ -142,13 +143,9 @@ void Adventure::tickTimer() {
 */
 void Adventure::InitializeLibraries() {
 	{
-		std::string vShaderT = util::readShaderFile("resources/shaders/camera_texture.vert");
-		std::string fShaderT = util::readShaderFile("resources/shaders/camera_texture.frag");
-		std::string vShaderCT = util::readShaderFile("resources/shaders/camera_color_texture.vert");
-		std::string fShaderCT = util::readShaderFile("resources/shaders/camera_color_texture.frag");
-		std::shared_ptr<graphics::Shader> shader1 = std::make_shared<graphics::Shader>(vShaderT.c_str() , fShaderT.c_str());
+		std::shared_ptr<graphics::Shader> shader1 = core::FileSystem::loadShaderFile("resources/shaders/camera_texture.vert" , "resources/shaders/camera_texture.frag");
 		libraries.ShaderLib.load("Texture" , shader1);
-		std::shared_ptr<graphics::Shader> shader2 = std::make_shared<graphics::Shader>(vShaderCT.c_str() , fShaderCT.c_str());
+		std::shared_ptr<graphics::Shader> shader2 = core::FileSystem::loadShaderFile("resources/shaders/camera_color_texture.vert" , "resources/shaders/camera_color_texture.frag");
 		libraries.ShaderLib.load("ColorTexture" , shader2);
 	}
 	{

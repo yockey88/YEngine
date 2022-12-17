@@ -18,6 +18,7 @@ namespace game {
         Scene* scene;
         entt::entity handle;
         bool null;
+        std::string path = "nullent";
 
         friend class Scene;
 
@@ -60,6 +61,8 @@ namespace game {
             inline bool isNotNull() const { return !null; }
             inline void nullify() { null = true; }
             inline void setContext(Scene* context) { scene = context; }
+            inline void setPath(const std::string& path) { this->path = path; } 
+            inline std::string getPath() const { return path; }
 
             bool operator==(const Entity& other) { return ((handle == other.handle) && (scene == other.scene)); }
             bool operator!=(const Entity& other) { return !(*this == other); }

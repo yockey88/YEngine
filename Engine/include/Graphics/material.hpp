@@ -19,6 +19,9 @@ namespace graphics {
         std::shared_ptr<Shader> shader;
         std::shared_ptr<Texture> texture;
 
+        std::string name;
+        std::string path;
+
         std::unordered_map<std::string , int> uniformInts;
         std::unordered_map<std::string , float> uniformFloats;
         std::unordered_map<std::string , glm::vec2> uniformFloat2s;
@@ -33,6 +36,12 @@ namespace graphics {
 
             inline std::shared_ptr<Shader> getShader() const { return shader; }
             inline std::shared_ptr<Texture> getTexture() const { return texture; }
+
+            inline std::string getName() const { return name; }
+            inline std::string getPath() const { return path; }
+
+            inline void setName(const std::string& name) { this->name = name; }
+            inline void setPath(const std::string& path) { this->path = path; }
 
             void setShader(std::shared_ptr<Shader> shader);
             void setTexture(std::shared_ptr<Texture> texture);

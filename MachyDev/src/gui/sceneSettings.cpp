@@ -2,6 +2,8 @@
 
 #include "scripts/playerScript.hpp"
 
+#include "Core/fileSystem.hpp"
+
 #include "Game/scene.hpp"
 #include "Game/sceneSerializer.hpp"
 #include "Game/Entity/entity.hpp"
@@ -40,6 +42,9 @@ namespace machy {
 
                 if (ImGui::MenuItem("Delete Entity")) 
                     deletedEntities.push(ent);
+
+                if (ImGui::MenuItem("Save Entity"))
+                    core::FileSystem::saveEntity(sceneContext , ent);
 
                 ImGui::EndPopup();
             }

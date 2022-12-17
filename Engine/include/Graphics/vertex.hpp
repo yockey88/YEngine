@@ -106,7 +106,6 @@ namespace graphics {
                 stride *= sizeof(T);
                 size = sizeof(T) * (uint32_t)dataVec.size();
 
-                MACHY_TRACE("Uploading Vertex -> size = {} | stride = {}" , size , stride);
                 MACHY_ASSERT(size > 0 , "Attempting to Upload Empty Vertex");
 
                 data = &dataVec[0];
@@ -122,6 +121,7 @@ namespace graphics {
         uint32_t attribCount;
         bool valid;
         std::vector<std::unique_ptr<RawVertexBuffer>> vbos;
+        std::string name , path;
         public:
             VertexArray();
             ~VertexArray();
@@ -137,6 +137,11 @@ namespace graphics {
 
             void bind();
             void unbind();
+
+            inline std::string getName() const { return name; }
+            inline void setName(const std::string& name) { this->name = name; }
+            inline std::string getPath() const { return path; }
+            inline void setPath(const std::string& path) { this->path = path; }
 
     };
 

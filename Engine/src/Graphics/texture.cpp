@@ -31,7 +31,6 @@ namespace graphics {
         if (pixels != nullptr && dataFormat != 0) {
             glTexImage2D(GL_TEXTURE_2D , 0 , dataFormat , width , height , 0 , dataFormat , GL_UNSIGNED_BYTE , pixels); MACHY_CHECK_GL_ERROR;
             setTextFilter(filter);
-            MACHY_TRACE("Loaded {} channel texture -> {}" , numChannels , path.c_str());
         } else {
             float pixels[] = 
             {   0.f , 0.f , 1.f ,    0.f , 1.f , 1.f ,   0.f , 0.f , 1.f ,   0.f , 1.f , 1.f ,

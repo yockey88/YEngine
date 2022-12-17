@@ -15,7 +15,8 @@ namespace graphics {
         uint32_t id;
         uint32_t width , height;
         uint32_t numChannels;
-         
+        
+        std::string name;
         std::string path;
 
         unsigned char* pixels;
@@ -30,7 +31,9 @@ namespace graphics {
             inline uint32_t getHeight() const { return height; }
             inline uint32_t getNumChannels() const { return numChannels; }
             inline std::string getPath() const { return path; }
+            inline std::string getName() const { return name; }
             inline TextureFilter getTextFilter() const { return filter; }
+            inline void setName(const std::string& name) { this->name = name; }
 
             void bind();
             void unbind();

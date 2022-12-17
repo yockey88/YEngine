@@ -1,7 +1,8 @@
 #include "machy.hpp"
-#include "util.hpp"
 
 #include "components.hpp"
+
+#include "Core/fileSystem.hpp"
 
 #include "glm/gtc/matrix_transform.hpp"
 
@@ -84,7 +85,7 @@ void PlayerCore::calcBounds() {
 
 void SceneCore::initScene(std::shared_ptr<graphics::Material> mat) {
 
-	auto [dim , rawMap] = util::readSceneFile("resources/scenes/scene11.txt");
+	auto [dim , rawMap] = core::FileSystem::readSceneFile("resources/scenes/scene11.txt");
 	blocksPerSide = dim;
 	mapStr = rawMap;
 

@@ -32,15 +32,11 @@ namespace core {
             }
 
             void load(const std::string& name , std::shared_ptr<T> asset) {
-                if (exists(name)) {
-                    MACHY_WARN("Loading Asset that is already loaded | overwriting asset with the same name {}" , name);
-                }
                 assets[name] = asset;
             }
 
             std::shared_ptr<T> get(const std::string& name) {
                 if (exists(name)) {
-                    MACHY_TRACE("Retrieving Asset -> {}" , name);
                     return assets[name];
                 } else {
                     MACHY_WARN("AssetLibrary::get({}) failed, {} not found" , name , name);

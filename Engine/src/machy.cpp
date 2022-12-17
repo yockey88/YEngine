@@ -1,6 +1,5 @@
 #include "machy.hpp"
 #include "log.hpp"
-#include "util.hpp"
 
 #include "Graphics/vertex.hpp"
 #include "Graphics/shader.hpp"

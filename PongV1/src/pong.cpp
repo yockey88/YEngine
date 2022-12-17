@@ -2,9 +2,9 @@
 #include "GameObjects/ball.hpp"
 #include "app.hpp"
 #include "main.hpp"
-#include "util.hpp"
 
 #include "Core/assetLibrary.hpp"
+#include "Core/fileSystem.hpp"
 
 #include "Graphics/camera.hpp"
 #include "Graphics/framebuffer.hpp"
@@ -93,30 +93,15 @@ namespace machy {
         void InitLibs() {
 
             {
-                std::shared_ptr<graphics::VertexArray> va = std::make_shared<graphics::VertexArray>();
-                {
-                    MACHY_CREATE_VERTEX_BUFFER(vb , float);
-                    vb->pushVertex({  0.5f ,  0.5f , 0.f });
-                    vb->pushVertex({  0.5f , -0.5f , 0.f });
-                    vb->pushVertex({ -0.5f , -0.5f , 0.f });
-                    vb->pushVertex({ -0.5f ,  0.5f , 0.f });
-                    vb->setLayout({ 3 });
-                    va->pushBuffer(std::move(vb));
-                }
-                va->setElements({ 0 , 3 , 1 , 1 , 3 , 2 }); 
-                va->upload();
+                std::shared_ptr<graphics::VertexArray> va = core::FileSystem::loadVertexFile("resources/assets/meshes/skeletonMesh.csv");
                 vaLib.load("Mesh" , va);
             }
             {   
-                std::string vShader = util::readShaderFile("resources/shaders/basic_camera_shader.vert");
-                std::string fShader = util::readShaderFile("resources/shaders/basic_camera_shader.frag");
-                std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader , fShader);
+                std::shared_ptr<graphics::Shader> shader = core::FileSystem::loadShaderFile("resources/shaders/basic_camera_shader.vert" , "resources/shaders/basic_camera_shader.frag");
                 shaderLib.load("Paddle" , shader);
             }
             {
-                std::string vShader = util::readShaderFile("resources/shaders/basic_shader.vert");
-                std::string fShaderBall = util::readShaderFile("resources/shaders/basic_circle.frag");
-                std::shared_ptr<graphics::Shader> shader = std::make_shared<graphics::Shader>(vShader , fShaderBall);
+                std::shared_ptr<graphics::Shader> shader = core::FileSystem::loadShaderFile("resources/shaders/basic_shader.vert" , "resources/shaders/basic_circle.frag");
                 shaderLib.load("Ball" , shader);
             }
             {
