@@ -134,7 +134,7 @@ namespace machy {
         if (selectionContext.HasComponent<game::PhysicsBody2DComponent>()) {
             auto& phys = selectionContext.GetComponent<game::PhysicsBody2DComponent>();
 
-            const char* physTypeStr[3] = { "Static" , "Dynamic" , "Kinematic" };
+            const char* physTypeStr[3] = { "Static" , "Kinematic" , "Dynamic" };
             const char* currPhysTypeStr = physTypeStr[(int)phys.type];
 
             if (ImGui::BeginCombo("Physics Type" , currPhysTypeStr)) {
@@ -151,6 +151,7 @@ namespace machy {
             }
 
             ImGui::Checkbox("Fix Rotation" , &phys.fixedRotation);
+
         }
 
         return;

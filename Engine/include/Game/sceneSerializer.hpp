@@ -23,10 +23,12 @@ namespace machy {
 
         void serializeEntPos(game::Entity& entity , js& json);
         void serializeEntSprite(game::Entity& entity , js& json);
+        void serializeEntPhysics2DPos(game::Entity& entity , js& json);
         void serializeCamPos(game::Entity& entity , js& json);
 
         void deserializeEntPos(game::Entity& entity , js& json);
         void deserializeEntSprite(game::Entity& entity , js& json);
+        void deserializeEntPhysics2D(game::Entity& entity , js& json);
         void deserializeCamPos(game::Entity& entity , js& json);
         public:
             SceneSerializer() : context(nullptr) {}

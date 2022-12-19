@@ -4,6 +4,8 @@
 #include "Game/Entity/entity.hpp"
 #include "Game/Entity/entityComponents.hpp"
 
+#include "box2d/box2d.h"
+
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -26,7 +28,7 @@ namespace machy {
         js json;
 
         if (entity.HasComponent<game::EntityID>()) {
-            auto& id = context->Entts().get<game::EntityID>(entity.get());
+            auto& id = entity.GetComponent<game::EntityID>();
             json["ID"] = id.name;
         }
 
@@ -35,6 +37,9 @@ namespace machy {
         }  
         if (entity.HasComponent<game::RenderComponent>()) {
             serializeEntSprite(entity , json);
+        }
+        if (entity.HasComponent<game::PhysicsBody2DComponent>()) {
+            serializeEntPhysics2DPos(entity , json);
         }   
         if (entity.HasComponent<game::CameraComponent>()) {
             serializeCamPos(entity , json);
@@ -54,8 +59,8 @@ namespace machy {
 
     void SceneSerializer::serializeEntPos(game::Entity& entity , js& json) {
 
-        auto& id = context->Entts().get<game::EntityID>(entity.get());
-        auto& pos = context->Entts().get<game::PositionComponent>(entity.get());
+        auto& id = entity.GetComponent<game::EntityID>();
+        auto& pos = entity.GetComponent<game::PositionComponent>();
 
         json["position"] = { pos.pos.x , pos.pos.y , pos.pos.z };
         json["rotation"] = { pos.rotation.x , pos.rotation.y , pos.rotation.z };
@@ -66,8 +71,8 @@ namespace machy {
 
     void SceneSerializer::serializeEntSprite(game::Entity& entity , js& json) {
 
-        auto& id = context->Entts().get<game::EntityID>(entity.get());
-        auto& sprite = context->Entts().get<game::RenderComponent>(entity.get());
+        auto& id = entity.GetComponent<game::EntityID>();
+        auto& sprite = entity.GetComponent<game::RenderComponent>();
 
         json["color"] = { sprite.color.r , sprite.color.g , sprite.color.b };
         json["meshname"] = sprite.skeleton->getName();
@@ -81,10 +86,23 @@ namespace machy {
         return;
     }
 
+    void SceneSerializer::serializeEntPhysics2DPos(game::Entity& entity , js& json) {
+
+        auto& physics = entity.GetComponent<game::PhysicsBody2DComponent>();
+
+        json["physics2D"] = (int)physics.type;
+        json["density"] = physics.density;
+        json["friction"] = physics.friction;
+        json["restitution"] = physics.restitution;
+        json["restitutionThreshold"] = physics.restitutionThreshold;
+
+        return;
+    }
+
     void SceneSerializer::serializeCamPos(game::Entity& entity , js& json) {
 
-        auto& id = context->Entts().get<game::EntityID>(entity.get());
-        auto& cam = context->Entts().get<game::CameraComponent>(entity.get());
+        auto& id = entity.GetComponent<game::EntityID>();
+        auto& cam = entity.GetComponent<game::CameraComponent>();
 
         json["camera"] = { cam.cameraPos.x , cam.cameraPos.y , cam.cameraPos.z , cam.cameraRotation };
 
@@ -105,18 +123,25 @@ namespace machy {
             MACHY_ASSERT((json.contains("/position/0"_json_pointer) && json.contains("/position/1"_json_pointer) && json.contains("/position/2"_json_pointer)
                             && json.contains("/size"_json_pointer) && json.contains("/size/0"_json_pointer) && json.contains("/size/1"_json_pointer) && json.contains("/size/2"_json_pointer)
                             && json.contains("/rotation"_json_pointer) && json.contains("/rotation/0"_json_pointer) && json.contains("/rotation/1"_json_pointer) && json.contains("/rotation/2"_json_pointer)),
-                            "Entity Save File Corrupt");
+                            "Entity Save File Corrupt | Missing Position Data");
             deserializeEntPos(entity , json);
         }
         if (json.contains("/color"_json_pointer)) {
             MACHY_ASSERT((json.contains("/color/0"_json_pointer) && json.contains("/color/1"_json_pointer) && json.contains("/color/2"_json_pointer)
-                            && json.contains("/meshname"_json_pointer) && json.contains("/matpath"_json_pointer)) , "Entity Save File Corrupt");
+                            && json.contains("/meshname"_json_pointer) && json.contains("/matpath"_json_pointer)) , 
+                            "Entity Save File Corrupt | Missing Render Data");
             deserializeEntSprite(entity , json);
         }
         if (json.contains("/camera"_json_pointer)) {
             MACHY_ASSERT((json.contains("/camera"_json_pointer) && json.contains("/camera/0"_json_pointer) && json.contains("/camera/1"_json_pointer)
-                            && json.contains("/camera/2"_json_pointer) && json.contains("/camera/3"_json_pointer)) , "Entity Save File Corrupt");
+                            && json.contains("/camera/2"_json_pointer) && json.contains("/camera/3"_json_pointer)) , 
+                            "Entity Save File Corrupt | Missing Camera Data");
             deserializeCamPos(entity , json);
+        }
+        if (json.contains("/physics2D"_json_pointer)) {
+            MACHY_ASSERT((json.contains("/density"_json_pointer) && json.contains("/friction"_json_pointer) && json.contains("/restitution"_json_pointer)
+                            && json.contains("/restitutionThreshold"_json_pointer)) , "Entity Save File Corrupt | Missing Physics Data");
+            deserializeEntPhysics2D(entity , json);
         }
 
         return;
@@ -162,6 +187,19 @@ namespace machy {
         sprite.material = core::FileSystem::loadMaterialFile(matpath);
 
         sprite.material->setUniformValue("inColor" , sprite.color);
+
+        return;
+    }
+
+    void SceneSerializer::deserializeEntPhysics2D(game::Entity& entity , js& json) {
+
+        auto& physics = entity.AddComponent<game::PhysicsBody2DComponent>();
+        int typeRaw = json["/physics2D"_json_pointer].get<int>();
+        physics.type = (game::PhysicsBody2DComponent::PhysicsType)typeRaw;
+        physics.friction = json["/friction"_json_pointer].get<float>();
+        physics.density = json["/density"_json_pointer].get<float>();
+        physics.restitution = json["/restitution"_json_pointer].get<float>();
+        physics.restitutionThreshold = json["/restitutionThreshold"_json_pointer].get<float>();
 
         return;
     }

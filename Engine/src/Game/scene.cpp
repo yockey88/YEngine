@@ -92,8 +92,6 @@ namespace game {
 
             const auto& newPos = physics.runtimePhysicsBody->GetPosition();
 
-            MACHY_INFO("Updating Position -> <{} , {}>" , newPos.x , newPos.y);
-
             pos.pos.x = newPos.x;
             pos.pos.y = newPos.y;
             pos.rotation.x = physics.runtimePhysicsBody->GetAngle();
@@ -153,25 +151,30 @@ namespace game {
 
         auto view = entRegistry.view<PhysicsBody2DComponent>();
         for (auto e : view) {
-
-            MACHY_INFO("Creating Physics Objects");
             
             Entity ent{ e };
             ent.setContext(this);
 
+            auto& id = ent.GetComponent<EntityID>();
             auto& pos = ent.GetComponent<PositionComponent>();
             auto& physics = ent.GetComponent<PhysicsBody2DComponent>();
 
-            b2BodyDef def;
-            def.enabled = true;
-            def.awake = true;
-            def.position.Set(pos.pos.x , pos.pos.y);
-            def.gravityScale = 1.f;
-            def.type = (b2BodyType)(int)physics.type;
-            def.fixedRotation = physics.fixedRotation;
+            physics.bodyDef.position.Set(pos.pos.x , pos.pos.y);
+            physics.bodyDef.type = (b2BodyType)physics.type;
+            physics.bodyDef.fixedRotation = physics.fixedRotation;
+            physics.bodyDef.gravityScale = 1.f;
 
-            physics.runtimePhysicsBody = world->CreateBody(&def);
+            physics.boundBox.SetAsBox((physics.size.x * pos.size.x) , (physics.size.y * pos.size.y));
+
+            physics.fixtrDef.shape = & (physics.boundBox);
+            physics.fixtrDef.density = 1.f;
+            physics.fixtrDef.friction = 0.3f;
+            physics.fixtrDef.restitution = 0.3f;
+            physics.fixtrDef.restitutionThreshold = 3.f;
+            
+            physics.runtimePhysicsBody = world->CreateBody(&physics.bodyDef);
             physics.runtimePhysicsBody->SetFixedRotation(physics.fixedRotation);
+            physics.runtimeFixture = physics.runtimePhysicsBody->CreateFixture(&physics.fixtrDef);
 
         }
 

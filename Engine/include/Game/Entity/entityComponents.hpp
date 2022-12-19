@@ -60,13 +60,23 @@ namespace game {
 
     // physics
     struct PhysicsBody2DComponent {
-        enum class PhysicsType{ Static = 0 , Dynamic , Kinematic };
+        enum class PhysicsType{ Static = 0 , Kinematic , Dynamic };
         PhysicsType type;
+        b2BodyDef bodyDef;
+        b2PolygonShape boundBox;
+        b2FixtureDef fixtrDef;
+        glm::vec2 offset , size;
+
+        float density , friction;
+        float restitution , restitutionThreshold;
         bool fixedRotation;
 
         b2Body* runtimePhysicsBody;
+        b2Fixture* runtimeFixture;
 
-        PhysicsBody2DComponent() : type(PhysicsType::Dynamic) , runtimePhysicsBody(nullptr) , fixedRotation(false) {}
+        PhysicsBody2DComponent() : runtimePhysicsBody(nullptr) , runtimeFixture(nullptr) , type(PhysicsType::Dynamic) ,
+                                    fixedRotation(true) , density(0.f) , friction(0.f) , restitution(0.f) , restitutionThreshold(0.f) ,
+                                    offset({ 0.f , 0.f }) , size({ 0.5f , 0.5f }) {}
         PhysicsBody2DComponent(const PhysicsBody2DComponent&) = default;
         ~PhysicsBody2DComponent() {}
     };

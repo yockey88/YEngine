@@ -5,13 +5,18 @@
         0.0,
         0.0
     ],
+    "density": 0.0,
+    "friction": 0.0,
     "matpath": "resources/assets/materials/basic.json",
     "meshname": "Skeleton",
+    "physics2D": 2,
     "position": [
-        1.6837074756622314,
-        5.843748569488525,
+        -1.0172405242919922,
+        0.9191607236862183,
         0.0
     ],
+    "restitution": 0.0,
+    "restitutionThreshold": 0.0,
     "rotation": [
         0.0,
         0.0,

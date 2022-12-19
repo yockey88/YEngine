@@ -11,6 +11,7 @@
 #include "entt.hpp"
 #include "glm/glm.hpp"
 #include "box2d/box2d.h"
+#include "box2d/b2_fixture.h"
 
 #include <memory>
 #include <map>

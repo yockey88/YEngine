@@ -1,9 +1,10 @@
 {
-    "entpath0": "resources/scenes/entities/cam2.json",
-    "entpath1": "resources/scenes/entities/guy2.json",
+    "entpath0": "resources/scenes/entities/guy2.json",
+    "entpath1": "resources/scenes/entities/cam2.json",
     "meshpath0": "resources/assets/meshes/skeleton.csv",
+    "meshpath1": "resources/assets/meshes/textrSkeleton.csv",
     "numents": 2,
-    "nummeshes": 1,
+    "nummeshes": 2,
     "scene": "testing",
     "scenepath": "resources/scenes/testing.json"
 }
