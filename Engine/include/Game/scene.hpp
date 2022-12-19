@@ -10,6 +10,7 @@
 
 #include "entt.hpp"
 #include "glm/glm.hpp"
+#include "box2d/box2d.h"
 
 #include <memory>
 #include <map>
@@ -29,10 +30,8 @@ namespace game {
     };
 
     class Scene {
-        core::AssetLibrary<graphics::VertexArray> MeshLib;
-        core::AssetLibrary<graphics::Shader> ShaderLib;
-        core::AssetLibrary<graphics::Texture> TextLib;
-        core::AssetLibrary<graphics::Material> MatLib;
+        core::AssetLibrary<graphics::VertexArray> Meshes;
+        b2World* world;
 
         std::map<int , Entity> entities;
         entt::registry entRegistry;
@@ -50,13 +49,16 @@ namespace game {
             ~Scene();
 
             void updateFromEditor();
-            void updateRuntime();
+            void updateRuntime(const float& dt);
             void render();
 
+            inline bool isPlaying() const { return playing; }
+            void playScene();
+            void pauseScene();
+            void stopScene();
+
             Entity createEnt(const std::string& name = "{BLANK ENTITY}");
-
             void destroyEntity(Entity& ent);
-
             Entity& getEntity(entt::entity handle);
             Entity& getMainCameraEntity();
             Entity getNullEnt();
@@ -64,17 +66,12 @@ namespace game {
             inline int getNumEnts() const { return numEnts; }  
             inline int getTotalEntsMade() const { return totalEntsCreated; }
 
-            inline core::AssetLibrary<graphics::VertexArray>& getVertLib() { return MeshLib; }
-            inline core::AssetLibrary<graphics::Shader>& getShaderLib() { return ShaderLib; }
-            inline core::AssetLibrary<graphics::Texture>& getTextureLib() { return TextLib; }
-            inline core::AssetLibrary<graphics::Material>& getMatLib() { return MatLib; }
+            inline core::AssetLibrary<graphics::VertexArray>& getVertLib() { return Meshes; }
             inline std::string getName() const { return name; }
             inline std::string getPath() const { return path; }
 
             inline void setSceneName(const std::string& name) { this->name = name; }
             inline void setScenePath(const std::string& path) { this->path = path; }
-            inline void play() { playing = true; }
-            inline void pause() { playing = false ; }
 
             void createSprite();
     };

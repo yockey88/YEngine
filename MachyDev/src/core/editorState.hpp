@@ -4,6 +4,7 @@
 #include "log.hpp"
 
 #include "Core/deltaTime.hpp"
+#include "Game/scene.hpp"
 
 namespace machy {
 
@@ -27,7 +28,7 @@ namespace machy {
             EditorState();
             ~EditorState() = default;
 
-            void checkInputs();
+            void checkInputs(std::shared_ptr<game::Scene> scene);
             void tickTimer();
 
             void flipState(States state);

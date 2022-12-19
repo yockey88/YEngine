@@ -3,20 +3,20 @@
 #include "machy.hpp"
 
 #include "Core/fileSystem.hpp"
-
 #include "Math/math.hpp"
 
-#include "Graphics/camera.hpp"
+#include "Graphics/vertex.hpp"
+#include "Graphics/shader.hpp"
+#include "Graphics/texture.hpp"
+#include "Graphics/material.hpp"
+#include "Graphics/framebuffer.hpp"
 
 #include "Game/sceneSerializer.hpp"
 #include "Game/Entity/entityComponents.hpp"
 
-#include "Graphics/framebuffer.hpp"
-
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/matrix_decompose.hpp"
-
 #include "entt.hpp"
 
 #include <string>
@@ -34,25 +34,38 @@ namespace machy {
 
     GameEditor::GameEditor() {
         activeOp = ImGuizmo::OPERATION::TRANSLATE;
-        renderingEditorCam = false;
+        renderingEditorCam = true;
         editorCam = std::make_shared<graphics::Camera>();
     }
 
     void GameEditor::renderControlPanel() {
         bool show = state.isShowingGui();
         if (ImGui::Begin("MainControls" , &show , ImGuiWindowFlags_MenuBar)) {
-            if (ImGui::Button("Game View")) {
-                state.toggleWindow(Windows::Gui);
-                MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
-            }
+            
+            if (ImGui::Button("Game View"))
+                if (context->Entts().view<game::CameraComponent>().size() >= 0) {
+                    renderingEditorCam = false;
+                    context->playScene();
+                    state.toggleWindow(Windows::Gui);
+                    MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
+                }
+
             if (ImGui::Button("Play Scene")) {
-                renderingEditorCam = false;
-                context->play();
+                if ((context->Entts().view<game::CameraComponent>().size() >= 0) && !context->isPlaying()) {
+                    renderingEditorCam = false;
+                    context->playScene();
+                    state.toggleWindow(Windows::Gui);
+                    MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
+                } else if (!context->isPlaying()) {
+                    context->playScene();
+                }
             }
             ImGui::SameLine();
             if (ImGui::Button("Pause Scene")) {
-                renderingEditorCam = true;
-                context->pause();
+                if (context->isPlaying()) {
+                    renderingEditorCam = true;
+                    context->pauseScene();
+                }
             }
 
             ImGuiWindowFlags flags = ImGuiWindowFlags_HorizontalScrollbar;
@@ -97,7 +110,8 @@ namespace machy {
         if (ImGui::BeginMenuBar()) {
             if (ImGui::BeginMenu("Editing")) {
                 if (ImGui::MenuItem("Playtest Game")) {
-
+                    renderingEditorCam = false;
+                    context->playScene();
                     state.flipState(States::Playtesting);
                     MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
 
@@ -245,7 +259,7 @@ namespace machy {
             ImGui::Image((void*)(intptr_t)window.getFrameBuffer()->getTextureID() , size , uv0 , uv1);
 
             game::Entity selected = activeScene.getSelectionContext();
-            if (selected != activeScene.getContext()->getNullEnt()) {
+            if (selected != activeScene.getContext()->getNullEnt() && !context->isPlaying()) {
                 ImGuizmo::SetOrthographic(true);
                 ImGuizmo::SetDrawlist();
                 
@@ -286,28 +300,23 @@ namespace machy {
             if (ImGui::BeginDragDropTarget()) {
                 auto payload = ImGui::GetDragDropPayload();
                 if (payload != nullptr) {
-
-                    auto& matLib = context->getMatLib();
-                    auto& shaderlib = context->getShaderLib();
-
-                    std::shared_ptr<graphics::Shader> s = shaderlib.get("Texture");
-                    std::shared_ptr<graphics::Texture> txt = std::make_shared<graphics::Texture>(assetSelectContext);
-                    std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(s , txt);
-
-                    matLib.load("TextureMaterial" , mat);
+                    MACHY_INFO("Success");
                 }
             }
         }
         ImGui::End();
     }
 
-    void GameEditor::UpdateEditor() {
+    void GameEditor::UpdateEditor(const float& dt) {
 
         state.tickTimer();
-		state.checkInputs();
+		state.checkInputs(context);
         
-        if (!renderingEditorCam) {
-            context->updateRuntime();
+        if (context->isPlaying()) {
+            /* TODO 
+                -> send ms/fram to editor console
+            */
+            context->updateRuntime(dt);
         } else {
             context->updateFromEditor();
         }
@@ -355,6 +364,9 @@ namespace machy {
         context = std::make_shared<game::Scene>();
         context->setScenePath("resources/scenes/devScene.json");
         setSceneContext(context);
+
+        editorCamPos.z = 25.f;
+        editorCam->setHeight(editorCamPos.z);
 
         return context;
     }

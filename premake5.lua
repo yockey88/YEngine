@@ -17,17 +17,19 @@ workspace "MachineY"
     externals["entt"] = "external/entt"
     externals["spdlog"] = "external/spdlog-1.11.0"
     externals["glad"] = "external/glad"
-    externals["box2d"] = "external/box2d"
     externals["glm"] = "external/glm-master"
     externals["stb"] = "external/stb"
     externals["ImEntt"] = "external/ImEnttComponent"
     externals["json"] = "external/json"
     externals["boost"] = "external/boost"
     externals["imguizmo"] = "external/imguizmo"
+    externals["box2d"] = "external/box2d"
+    externals["yphysx"] = "external/YPhysx"
 
     -- Glad before all
     include "external/glad"
     include "external/box2d"
+    include "external/YPhysx"
 
     --------------------
     -- Engine Library --
@@ -50,14 +52,16 @@ workspace "MachineY"
             "%{externals.entt}/.hpp",
             "%{externals.glad}**.c",
             "%{externals.glad}**.h",
-            "%{externals.box2d}**.h",
-            "%{externals.box2d}**.cpp",
             "%{externals.glm}/**.hpp",
             "%{externals.stb}/*.h",
             "%{externals.ImEntt}/*.hpp",
             "%{externals.json}/**.hpp",
             "%{externals.imguizmo}/**.h",
-            "%{externals.imguizmo}/**.cpp"
+            "%{externals.imguizmo}/**.cpp",
+            "%{externals.box2d}/include/**.h",
+            "%{externals.box2d}/src/**.cpp",
+            "%{externals.yphysx}/include/**.hpp",
+            "%{externals.yphysx}/src/**.cpp"
         }
 
         externalincludedirs {
@@ -67,12 +71,13 @@ workspace "MachineY"
             "%{externals.entt}",
             "%{externals.spdlog}/include",
             "%{externals.glad}/include",
-            "%{externals.box2d}/include/box2d",
             "%{externals.glm}",
             "%{externals.stb}",
             "%{externals.ImEntt}",
             "%{externals.json}/include",
-            "%{externals.imguizmo}"
+            "%{externals.imguizmo}",
+            "%{externals.box2d}/include",
+            "%{externals.yphysx}/include"
         }
 
         flags { "FatalWarnings" }
@@ -154,7 +159,6 @@ workspace "MachineY"
             "Engine/include",
             "%{externals.sdl2}/include",
             "%{externals.glad}/include",
-            "%{externals.box2d}/include/box2d",
             "%{externals.spdlog}/include",
             "%{externals.entt}",
             "%{externals.imgui}",
@@ -162,7 +166,9 @@ workspace "MachineY"
             "%{externals.stb}",
             "%{externals.ImEntt}",
             "%{externals.json}/include",
-            "%{externals.imguizmo}"
+            "%{externals.imguizmo}",
+            "%{externals.box2d}/include",
+            "%{externals.yphysx}/include"
         }
 
         flags { "FatalWarnings" }
@@ -199,207 +205,18 @@ workspace "MachineY"
                 "MACHY_PLATFORM_MAC"
             }
             links {
+                "Engine",
                 "SDL2.framework",
-                "glad"
+                "glad",
+                "box2d"
             }
 
         filter { "system:linux" , "configurations:*" }
             defines {
                 "MACHY_PLATFORM_LINUX"
             }
-            links {
-                "SDL2",
-                "glad",
-                "box2d"
-            }
-
-        filter "configurations:Debug"
-            defines {
-                "MACHY_CONFIG_DEBUG"
-            }
-            runtime "Debug"
-            symbols "on"
-
-        filter "configurations:Release"
-            defines {
-                "MACHY_CONFIG_RELEASE"
-            }
-            runtime "Release"
-            symbols "off"
-            optimize "on"
-
-    -----------
-    -- Pong  --
-    -----------
-    project "PongV1"
-        location "PongV1"
-        kind "ConsoleApp"
-        language "C++"
-        cppdialect "C++20"
-        staticruntime "on"
-        links "Engine"
-
-        targetdir(tdir)
-        objdir(odir)
-
-        files {
-            "%{prj.name}/src/**.cpp",
-            "%{prj.name}/src/**.hpp"
-        }
-
-        externalincludedirs {
-            "%{prj.name}/GameObjects",
-            "Engine/include",
-            "%{externals.sdl2}/include",
-            "%{externals.glad}/include",
-            "%{externals.entt}",
-            "%{externals.spdlog}/include",
-            "%{externals.imgui}",
-            "%{externals.glm}",
-            "%{externals.stb}",
-            "%{externals.ImEntt}",
-            "%{externals.json}/include",
-            "%{externals.imguizmo}"
-        }
-
-        flags { "FatalWarnings" }
-        
-        postbuildcommands {
-        "python3 " .. path.getabsolute("%{prj.name}") .. "/postBuild.py %{cfg.buildcfg}"
-        }
-
-        filter { "system:windows" , "configurations:*" }
-            systemversion "latest"
-            defines {
-                "MACHY_PLATFORM_WINDOWS",
-                "MACHY_GUI"
-            }
-
-            libdirs {
-                "%{externals.sdl2}/lib/x64"
-            }
-
             links {
                 "Engine",
-                "SDL2",
-                "glad",
-                "box2d"
-            }
-
-        filter { "system:macosx" , "configurations:*" }
-            systemversion "latest"
-            xcodebuildsettings {
-                ["MACOSX_DEPLOYMENT_TARGET"] = "10.15",
-                ["UseModernBuildSystem"] = "NO"
-            }
-            defines {
-                "MACHY_PLATFORM_MAC"
-            }
-            links {
-                "SDL2.framework",
-                "glad",
-                "box2d"
-            }
-
-        filter { "system:linux" , "configurations:*" }
-            defines {
-                "MACHY_PLATFORM_LINUX"
-            }
-            links {
-                "SDL2",
-                "glad",
-                "box2d"
-            }
-
-        filter "configurations:Debug"
-            defines {
-                "MACHY_CONFIG_DEBUG"
-            }
-            runtime "Debug"
-            symbols "on"
-
-        filter "configurations:Release"
-            defines {
-                "MACHY_CONFIG_RELEASE"
-            }
-            runtime "Release"
-            symbols "off"
-            optimize "on"
-
-   
-
-    ---------------
-    -- Adventure --
-    ---------------
-    project "Adventure"
-        location "Adventure"
-        kind "ConsoleApp"
-        language "C++"
-        cppdialect "C++20"
-        staticruntime "on"
-        links "Engine"
-
-        targetdir(tdir)
-        objdir(odir)
-
-        files {
-            "%{prj.name}/src/**.cpp",
-            "%{prj.name}/src/**.hpp"
-        }
-
-        externalincludedirs {
-            "Engine/include",
-            "%{externals.sdl2}/include",
-            "%{externals.glad}/include",
-            "%{externals.entt}",
-            "%{externals.spdlog}/include",
-            "%{externals.imgui}",
-            "%{externals.glm}",
-            "%{externals.stb}",
-            "%{externals.ImEntt}",
-            "%{externals.json}/include",
-            "%{externals.imguizmo}/src"
-        }
-
-        flags { "FatalWarnings" }
-
-        filter { "system:windows" , "configurations:*" }
-            systemversion "latest"
-            defines {
-                "MACHY_PLATFORM_WINDOWS",
-                "MACHY_GUI"
-            }
-
-            libdirs {
-                "%{externals.sdl2}/lib/x64"
-            }
-
-            links {
-                "Engine",
-                "SDL2",
-                "glad",
-                "box2d"
-            }
-
-        filter { "system:macosx" , "configurations:*" }
-            systemversion "latest"
-            xcodebuildsettings {
-                ["MACOSX_DEPLOYMENT_TARGET"] = "10.15",
-                ["UseModernBuildSystem"] = "NO"
-            }
-            defines {
-                "MACHY_PLATFORM_MAC"
-            }
-            links {
-                "SDL2.framework",
-                "glad"
-            }
-
-        filter { "system:linux" , "configurations:*" }
-            defines {
-                "MACHY_PLATFORM_LINUX"
-            }
-            links {
                 "SDL2",
                 "glad",
                 "box2d"

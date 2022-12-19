@@ -17,7 +17,8 @@ static std::string baseCamTFShader = "resources/assets/shaders/basic_camera_shad
 namespace machy {
 namespace game {
 
-    Scene::Scene() : numEnts(0) , totalEntsCreated(0) , playing(true) , name("{Blank Scene}")  {
+    Scene::Scene() : world(nullptr) , numEnts(0) , totalEntsCreated(0) , playing(false) , name("{Blank Scene}") {
+
         Entity nullEnt;
         nullEnt.handle = entt::null;
 
@@ -25,27 +26,38 @@ namespace game {
 
         std::shared_ptr<graphics::VertexArray> VA = core::FileSystem::loadVertexFile(sceneBaseMeshPath);
         std::shared_ptr<graphics::VertexArray> tVA = core::FileSystem::loadVertexFile(sceneTexMeshPath);
-        MeshLib.load(VA->getName() , VA);
-        MeshLib.load(tVA->getName() , tVA);
+        
+        Meshes.load(VA->getName() , VA);
+        Meshes.load(tVA->getName() , tVA);
 
-        std::shared_ptr<graphics::Shader> shader = core::FileSystem::loadShaderFile(baseCamVShader , baseCamFShader);
-        std::shared_ptr<graphics::Shader> circle = core::FileSystem::loadShaderFile(baseCamVShader , baseCamCShader);
-        std::shared_ptr<graphics::Shader> tshader = core::FileSystem::loadShaderFile(baseCamTVShader , baseCamTFShader);
-        ShaderLib.load("Basic" , shader);
-        ShaderLib.load("Circle" , circle);
-        ShaderLib.load("Texture" , tshader);
     }
 
     Scene::~Scene() {
+
+        auto view = entRegistry.view<NativeScript>();
+        for (auto e : view) {
+            Entity ent{ e };
+            ent.setContext(this);
+            ent.RemoveComponent<NativeScript>();
+        }
+
         entRegistry.each([&] (auto entity) { entRegistry.destroy(entity); });
+
+        if (world != nullptr) {
+            delete world;
+            world = nullptr;
+        }
+
     }
 
     void Scene::updateFromEditor() {
 
         return;
+
     }
 
-    void Scene::updateRuntime() {
+    void Scene::updateRuntime(const float& dt) {
+
         entRegistry.view<NativeScript>().each([=](auto entity , auto& script) {
                 if (script.instance == nullptr) {
                     script.instance = script.BindScript();
@@ -55,6 +67,38 @@ namespace game {
                 }
                 script.instance->onUpdate();
             });
+
+        entRegistry.view<CameraComponent , PositionComponent>().each([=](auto entity , auto& cam , auto& pos) {
+                pos.pos.x = cam.cameraPos.x;
+                pos.pos.y = cam.cameraPos.y;
+                pos.pos.z = cam.cameraPos.z;
+                pos.rotation.x = cam.cameraRotation;
+                cam.camera->setHeight(pos.pos.z);
+            });
+
+        const int velIter = 6;
+        const int posIter = 2;
+        float timestep = (1.f / 60.f);
+        world->Step(timestep , velIter , posIter);
+
+        auto view = entRegistry.view<PhysicsBody2DComponent>();
+        for (auto e : view) { 
+            
+            Entity ent{ e };
+            ent.setContext(this);
+
+            auto& pos = ent.GetComponent<PositionComponent>();
+            auto& physics = ent.GetComponent<PhysicsBody2DComponent>();
+
+            const auto& newPos = physics.runtimePhysicsBody->GetPosition();
+
+            MACHY_INFO("Updating Position -> <{} , {}>" , newPos.x , newPos.y);
+
+            pos.pos.x = newPos.x;
+            pos.pos.y = newPos.y;
+            pos.rotation.x = physics.runtimePhysicsBody->GetAngle();
+
+        }
 
         return;
     }
@@ -68,7 +112,9 @@ namespace game {
             if (cameras.size() > 0)
                 for (auto& ent : cameras)
                     if (entRegistry.valid(ent)) {
-                        auto& cam = cameras.get<CameraComponent>(ent);
+                        Entity entity{ ent };
+                        entity.setContext(this);
+                        auto& cam = entity.GetComponent<CameraComponent>();
                         MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , cam.camera));
                     }
         }
@@ -78,8 +124,8 @@ namespace game {
                 Entity entity{ ent };
                 entity.setContext(this);
                 if (entity.HasComponent<RenderComponent>() && entity.HasComponent<RenderComponent>()){
-                    auto& renderable = sprites.get<RenderComponent>(ent);
-                    auto& position = sprites.get<PositionComponent>(ent);
+                    auto& renderable = entity.GetComponent<RenderComponent>();
+                    auto& position = entity.GetComponent<PositionComponent>();
 
                     glm::mat4 model = position.getModel();
                     if (renderable.skeleton.get() != nullptr && renderable.material.get() != nullptr)
@@ -94,6 +140,81 @@ namespace game {
                     if (entRegistry.valid(ent)) {
                         MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
                     }
+        }
+
+        return;
+    }
+
+    void Scene::playScene() {
+        playing = true;
+
+        b2Vec2 grav{ 0.f , -9.8f };
+        world = new b2World(grav);
+
+        auto view = entRegistry.view<PhysicsBody2DComponent>();
+        for (auto e : view) {
+
+            MACHY_INFO("Creating Physics Objects");
+            
+            Entity ent{ e };
+            ent.setContext(this);
+
+            auto& pos = ent.GetComponent<PositionComponent>();
+            auto& physics = ent.GetComponent<PhysicsBody2DComponent>();
+
+            b2BodyDef def;
+            def.enabled = true;
+            def.awake = true;
+            def.position.Set(pos.pos.x , pos.pos.y);
+            def.gravityScale = 1.f;
+            def.type = (b2BodyType)(int)physics.type;
+            def.fixedRotation = physics.fixedRotation;
+
+            physics.runtimePhysicsBody = world->CreateBody(&def);
+            physics.runtimePhysicsBody->SetFixedRotation(physics.fixedRotation);
+
+        }
+
+        return;
+    }
+
+    void Scene::pauseScene() {
+
+        playing = false;
+
+        delete world;
+        world = nullptr;
+
+        auto view = entRegistry.view<PhysicsBody2DComponent>();
+        for (auto e : view) {
+            
+            Entity ent{ e };
+            ent.setContext(this);
+
+            auto& physics = ent.GetComponent<PhysicsBody2DComponent>();
+
+            physics.runtimePhysicsBody = nullptr;
+
+        }   
+
+        return;
+    }
+
+    void Scene::stopScene() {
+        playing = false;
+
+        auto view = entRegistry.view<NativeScript>();
+        for (auto e : view) {
+            Entity ent{ e };
+            ent.setContext(this);
+            ent.RemoveComponent<NativeScript>();
+        }
+
+        entRegistry.each([&] (auto entity) { entRegistry.destroy(entity); });
+
+        if (world != nullptr) {
+            delete world;
+            world = nullptr;
         }
 
         return;

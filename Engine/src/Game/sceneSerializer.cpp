@@ -144,7 +144,6 @@ namespace machy {
 
         auto& sprite = entity.AddComponent<game::RenderComponent>();
         auto& meshes = context->getVertLib();
-        auto& mats = context->getMatLib();
 
         sprite.color.r = json["/color/0"_json_pointer].get<float>();
         sprite.color.g = json["/color/1"_json_pointer].get<float>();
@@ -161,7 +160,6 @@ namespace machy {
 
         std::string matpath = json["/matpath"_json_pointer].get<std::string>();
         sprite.material = core::FileSystem::loadMaterialFile(matpath);
-        context->getMatLib().load(sprite.material->getName() , sprite.material);
 
         sprite.material->setUniformValue("inColor" , sprite.color);
 

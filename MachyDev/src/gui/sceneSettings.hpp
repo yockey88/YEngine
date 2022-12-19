@@ -15,7 +15,7 @@
 namespace machy {
 
     class SceneSettingGUI {
-        std::shared_ptr<game::Scene> sceneContext;
+        std::shared_ptr<game::Scene> context;
         game::Entity selectionContext;
         std::queue<game::Entity> deletedEntities;
 
@@ -27,14 +27,14 @@ namespace machy {
         template <typename T>
         void deleteComponentEntry(const std::string& entryname);
         public:
-            SceneSettingGUI() : sceneContext(nullptr) {}
-            SceneSettingGUI(const std::shared_ptr<game::Scene>& scene) : sceneContext(scene){ setContext(scene); }
+            SceneSettingGUI() : context(nullptr) {}
+            SceneSettingGUI(const std::shared_ptr<game::Scene>& scene) : context(scene){ setContext(scene); }
             ~SceneSettingGUI() {}
 
             void setContext(const std::shared_ptr<game::Scene>& scene);
 
             inline game::Entity getSelectionContext() const { return selectionContext; } 
-            inline std::shared_ptr<game::Scene>& getContext() { return sceneContext; }
+            inline std::shared_ptr<game::Scene>& getContext() { return context; }
 
             void GuiRender(EditorState& state);
 

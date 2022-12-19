@@ -8,27 +8,18 @@
 #include "Graphics/camera.hpp"
 #include "Graphics/sprite2D.hpp"
 
+#include "box2d/box2d.h"
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/quaternion.hpp>
+#include "glm/gtx/quaternion.hpp"
 
 #include <stdint.h>
 
 namespace machy {
 namespace game {
 
-    struct CameraComponent {
-        std::shared_ptr<graphics::Camera> camera;
-        glm::vec3 cameraPos;
-        float cameraRotation;
-
-        CameraComponent() : cameraPos(glm::vec3(0.f)) , cameraRotation(0.f) {
-            camera = std::make_shared<graphics::Camera>();
-            camera->setHeight(3.f);
-        }
-    };
-
+    /// position
     struct PositionComponent {
         glm::vec3 pos , size , rotation;
 
@@ -42,6 +33,7 @@ namespace game {
         }
     };
 
+    /// sprites
     struct RenderComponent {
         std::shared_ptr<graphics::VertexArray> skeleton;
         std::shared_ptr<graphics::Material> material;
@@ -52,36 +44,34 @@ namespace game {
         RenderComponent(const RenderComponent&) = default;
         RenderComponent(std::shared_ptr<graphics::VertexArray> skeleton , std::shared_ptr<graphics::Material> material) 
             : skeleton(skeleton) , material(material) , color(glm::vec3(0.f)) {}
+    };
 
-        void SetMaterial(std::shared_ptr<Scene> entContext , const std::string& VertName = "Skeleton" , const std::string& MatName = "Basic") {
-            if (entContext->getVertLib().exists(VertName))
-                skeleton = entContext->getVertLib().get(VertName);
+    /// cameras
+    struct CameraComponent {
+        std::shared_ptr<graphics::Camera> camera;
+        glm::vec3 cameraPos;
+        float cameraRotation;
 
-            if (entContext->getMatLib().exists(MatName))
-                material = entContext->getMatLib().get(MatName);
+        CameraComponent() : cameraPos(glm::vec3(0.f)) , cameraRotation(0.f) {
+            camera = std::make_shared<graphics::Camera>();
+            camera->setHeight(3.f);
         }
     };
 
-    // struct RenderComponent {
-    //     std::shared_ptr<graphics::VertexArray> skeleton;
-    //     std::shared_ptr<graphics::Material> material;
-    //     // glm::vec3 color;
-    //     // std::string meshName , matName;
+    // physics
+    struct PhysicsBody2DComponent {
+        enum class PhysicsType{ Static = 0 , Dynamic , Kinematic };
+        PhysicsType type;
+        bool fixedRotation;
 
-    //     // RenderComponent() = default;
-    //     // RenderComponent(const RenderComponent&) = default;
-    //     // RenderComponent(std::shared_ptr<graphics::VertexArray> skeleton , std::shared_ptr<graphics::Material> material) 
-    //     //     : skeleton(skeleton) , material(material) , color(glm::vec3(0.f)) {}
+        b2Body* runtimePhysicsBody;
 
-    //     // void SetMaterial(std::shared_ptr<Scene> entContext , const std::string& VertName = "Skeleton" , const std::string& MatName = "Basic") {
-    //     //     if (entContext->getVertLib().exists(VertName))
-    //     //         skeleton = entContext->getVertLib().get(VertName);
+        PhysicsBody2DComponent() : type(PhysicsType::Dynamic) , runtimePhysicsBody(nullptr) , fixedRotation(false) {}
+        PhysicsBody2DComponent(const PhysicsBody2DComponent&) = default;
+        ~PhysicsBody2DComponent() {}
+    };
 
-    //     //     if (entContext->getMatLib().exists(MatName))
-    //     //         material = entContext->getMatLib().get(MatName);
-    //     // }
-    // };
-
+    // scripting
     struct NativeScript {
         ScriptedEntity* instance = nullptr;
         bool bound;

@@ -1,4 +1,5 @@
-project "box2d"
+project "yphysx"
+    location "YPhysx"
     kind "StaticLib"
     language "C++"
     cppdialect "C++20"
@@ -8,7 +9,7 @@ project "box2d"
 
     files {
         "include/**.h",
-        "src/**.cpp"
+        "src/**.c"
     }
 
     externalincludedirs {

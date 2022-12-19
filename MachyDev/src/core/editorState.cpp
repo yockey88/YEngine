@@ -37,11 +37,16 @@ namespace machy {
         clock.start();        
     }
 
-    void EditorState::checkInputs() {
+    void EditorState::checkInputs(std::shared_ptr<game::Scene> scene) {
 
         if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE) && !isShowingGui()) {
+
+            if (scene->isPlaying())
+                scene->pauseScene();
+
             toggleWindow(Windows::Gui);
             MachY::Instance().getWindow().setRenderToScrn(!isShowingGui());
+            
         }
         if (input::keyboard::keyDown(MACHY_INPUT_KEY_H) && !isInMainState()) {
             flipState(States::MainState);

@@ -1,24 +1,9 @@
 #include "machy.hpp"
 #include "app.hpp"
 #include "main.hpp"
-
-#include "box2d.h"
+#include "yworld.hpp"
 
 #include "core/editor.hpp"
-#include "scripts/playerScript.hpp"
-
-#include "Core/fileSystem.hpp"
-
-#include "Game/scene.hpp"
-#include "Game/sceneSerializer.hpp"
-#include "Game/Entity/entity.hpp"
-
-#include "glm/gtc/type_ptr.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-
-#include "entt.hpp"
-
-#include "imgui.h"
 
 namespace machy {	
 
@@ -38,17 +23,17 @@ class Dev : public App {
 		virtual core::WindowProperties GetWindowProperties() override { return setWinProps(); }
 
 		virtual void Initialize() override {
-
 			editor.CreateEditorContext();
 			return;
 		}
 
-		virtual void Shutdown() override { return; }
+		virtual void Shutdown() override { 
+			editor.getContext()->stopScene();
+			return;
+		}
 
 		virtual void Update(const float& dt) override {
-			
-			editor.UpdateEditor();
-
+			editor.UpdateEditor(dt);
 			return;
 		}
 

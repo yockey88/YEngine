@@ -36,7 +36,16 @@ namespace machy::core {
 
 	void Window::initializeScrnRender() {
 
-		vertArray = core::FileSystem::loadVertexFile(winFBVertPath);
+		vertArray = std::make_shared<graphics::VertexArray>();
+		MACHY_CREATE_VERTEX_BUFFER(vb, short);
+		vb->pushVertex({  1 ,  1 , 1 , 1 });
+		vb->pushVertex({  1 , -1 , 1 , 0 });
+		vb->pushVertex({ -1 , -1 , 0 , 0 });
+		vb->pushVertex({ -1 ,  1 , 0 , 1 });
+		vb->setLayout({ 2 , 2 });
+		vertArray->pushBuffer(std::move(vb));
+		vertArray->setElements({ 0 , 3 , 1 , 1 , 3 , 2 });
+		vertArray->upload();
 		shader = core::FileSystem::loadShaderFile(winVShaderPath , winFShaderPath);
 
 		return;

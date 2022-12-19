@@ -12,3 +12,4 @@ logs/
 *Makefile
 *.pyc
 ToDo.md
+documentation/

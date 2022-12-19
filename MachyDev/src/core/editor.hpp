@@ -2,29 +2,12 @@
 #define EDITOR_HPP
 
 #include "gui/sceneSettings.hpp"
-#include "core/editorState.hpp"
-
-#include "Core/assetLibrary.hpp"
-
-#include "Game/scene.hpp"
-#include "Game/Entity/entity.hpp"
 
 #include "Graphics/camera.hpp"
-#include "Graphics/vertex.hpp"
-#include "Graphics/shader.hpp"
-#include "Graphics/texture.hpp"
-#include "Graphics/material.hpp"
 
 #include "ImGuizmo.h"
 
 namespace machy {
-
-    struct Libraries {
-        core::AssetLibrary<graphics::VertexArray> VertLib;
-        core::AssetLibrary<graphics::Shader> ShaderLib;
-        core::AssetLibrary<graphics::Texture> TextureLib;
-        core::AssetLibrary<graphics::Material> MaterialLib;
-    };
 
     class GameEditor {
         EditorState state;
@@ -34,8 +17,8 @@ namespace machy {
 
         // Ent To Hold Editor Camera
         std::shared_ptr<graphics::Camera> editorCam;
-        glm::vec3 camPos; 
-        float camRot;
+        glm::vec3 editorCamPos; 
+        float editorCamRot;
         bool renderingEditorCam;
 
         ImGuizmo::OPERATION activeOp;
@@ -52,7 +35,7 @@ namespace machy {
             GameEditor();
             ~GameEditor() {}
 
-            void UpdateEditor();
+            void UpdateEditor(const float& dt);
             void SceneRender();
             void RenderEditor(); 
             void RenderEditorCam();
