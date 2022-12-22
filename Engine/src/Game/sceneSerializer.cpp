@@ -44,6 +44,9 @@ namespace machy {
         if (entity.HasComponent<game::CameraComponent>()) {
             serializeCamPos(entity , json);
         }
+        if (entity.HasComponent<game::NativeScript>()) {
+            json["script"] = "scripted";
+        }
 
         std::ofstream file(entity.getPath());
         if (!file.is_open()) {
@@ -175,17 +178,32 @@ namespace machy {
         sprite.color.b = json["/color/2"_json_pointer].get<float>();
 
         std::string meshname = json["/meshname"_json_pointer].get<std::string>();
-        if (context->getVertLib().exists(meshname)) {
-            sprite.skeleton = meshes.get(meshname);
-            sprite.meshName = meshname;
-        } else {
-            sprite.skeleton = meshes.get("Skeleton");
-            sprite.meshName = "Skeleton";
-        }
-
         std::string matpath = json["/matpath"_json_pointer].get<std::string>();
-        sprite.material = core::FileSystem::loadMaterialFile(matpath);
 
+        if (meshname == "Skeleton") {
+            sprite.skeleton = core::FileSystem::createBasicMesh();
+            sprite.meshName = "Skeleton";
+            sprite.material = core::FileSystem::loadMaterialFile(matpath);
+        } else if (meshname == "TexturedSkeleton") {
+
+            sprite.meshName = "TexturedSkeleton";
+            if (json.contains("/UVs"_json_pointer)) {
+                MACHY_ASSERT((json.contains("/UVs/0"_json_pointer) && json.contains("/UVs/1"_json_pointer) &&
+                                json.contains("/UVs/2"_json_pointer) && json.contains("/UVs/3"_json_pointer) &&
+                                json.contains("/UVs/4"_json_pointer) && json.contains("/UVs/5"_json_pointer) &&
+                                json.contains("/UVs/6"_json_pointer) && json.contains("/UVs/7"_json_pointer)) , "Texture Missing UV coordinates");
+
+                glm::vec4 uvR( json["/UVs/0"_json_pointer].get<float>() , json["/UVs/1"_json_pointer].get<float>() , json["/UVs/2"_json_pointer].get<float>() , json["/UVs/3"_json_pointer].get<float>() );
+                glm::vec4 uvL( json["/UVs/4"_json_pointer].get<float>() , json["/UVs/5"_json_pointer].get<float>() , json["/UVs/6"_json_pointer].get<float>() , json["/UVs/7"_json_pointer].get<float>() );
+                
+                sprite.skeleton = core::FileSystem::createTexturedMesh(uvR , uvL);
+                sprite.material = core::FileSystem::loadTexturedMaterialFile(matpath);
+            } else { 
+                sprite.skeleton = core::FileSystem::createTexturedMesh();
+                sprite.material = core::FileSystem::loadTexturedMaterialFile(matpath);
+            }
+            sprite.meshName = "TexturedSkeleton";
+        }
         sprite.material->setUniformValue("inColor" , sprite.color);
 
         return;
@@ -217,14 +235,41 @@ namespace machy {
         return;
     }
 
+    void SceneSerializer::deserializeNativeScript(game::Entity& entity , js& json) {
+
+
+
+        return;
+    }
+
+    std::string SceneSerializer::deserializeTexturedMat(std::map<std::string , std::string>& paths , const std::string& path) {
+
+        js json = getJson(path);
+
+        MACHY_ASSERT((json.contains("/Matname"_json_pointer) && json.contains("/Shaders"_json_pointer)) && 
+                        json.contains("/Texture"_json_pointer), "Material File Corrupt");
+
+        std::filesystem::path fsPath = json["/Shaders/0"_json_pointer].get<std::string>();
+        if (fsPath.extension().string() == ".vert") {
+            paths["vert"] = json["/Shaders/0"_json_pointer].get<std::string>();
+            paths["frag"] = json["/Shaders/1"_json_pointer].get<std::string>();
+        } else {
+            paths["frag"] = json["/Shaders/0"_json_pointer].get<std::string>();
+            paths["vert"] = json["/Shaders/1"_json_pointer].get<std::string>();
+        }
+        paths["texture"] = json["/Texture"_json_pointer].get<std::string>();
+
+        std::string name = json["/Matname"_json_pointer].get<std::string>();
+
+        return name;
+
+    }
+
     std::string SceneSerializer::deserializeMat(std::map<std::string , std::string>& paths , const std::string& path) {
         
         js json = getJson(path);
 
-        MACHY_ASSERT((json.contains("/Matname"_json_pointer) && json.contains("/Shaders"_json_pointer) &&
-                        json.contains("/Texture"_json_pointer)) , "Material File Corrupt");
-
-        paths["texture"] = json["/Texture"_json_pointer].get<std::string>();
+        MACHY_ASSERT((json.contains("/Matname"_json_pointer) && json.contains("/Shaders"_json_pointer)) , "Material File Corrupt");
 
         std::filesystem::path fsPath = json["/Shaders/0"_json_pointer].get<std::string>();
         if (fsPath.extension().string() == ".vert") {
@@ -249,15 +294,7 @@ namespace machy {
 
         json["scene"] = context->getName();
         json["scenepath"] = context->getPath();
-        json["numents"] = context->getNumEnts();
-        json["nummeshes"] = context->getVertLib().getAllAssets().size();
-
-        int i = 0;
-        for (auto& vert : context->getVertLib().getAllAssets()) {
-            std::string tag = "meshpath" + std::to_string(i);
-            json[tag] = vert.second->getPath();
-            i++;
-        }
+        json["numents"] = context->Entts().size();
 
         int j = 0;
         std::vector<std::string> entPaths;
@@ -293,7 +330,6 @@ namespace machy {
         js json = getJson(filepath);
 
         int numEntsInScene = -1;
-        int numMeshesInLib = -1;
         
         if (json.contains("scene")) {
             context->setSceneName(json["scene"]);
@@ -301,30 +337,15 @@ namespace machy {
             context->setScenePath(json["scenepath"]);
             if (json.contains("numents"))
                 numEntsInScene = json["numents"].get<int>();
-            if (json.contains("nummeshes"))
-                numMeshesInLib = json["nummeshes"].get<int>();
         }
 
-        if (numMeshesInLib > 0) {
-            std::shared_ptr<graphics::VertexArray> VA;
-            for (int i = 0; i < numMeshesInLib; i++) {
-                std::string tag = "meshpath" + std::to_string(i);
-                std::string path = json[tag].get<std::string>();
-
-                VA = core::FileSystem::loadVertexFile(path);
-                if (!context->getVertLib().exists(VA->getName()))
-                    context->getVertLib().load(VA->getName() , VA);
-            }
-        }
-
-        if (numEntsInScene > 0) {
+        if (numEntsInScene > 0)
             for (int i = 0; i < numEntsInScene; i++) {
                 std::string tag = "entpath" + std::to_string(i);
                 std::string path = json[tag].get<std::string>();
 
                 deserializeEnt(path);
             }
-        }
 
         return context;
     }

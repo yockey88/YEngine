@@ -1,0 +1,30 @@
+{
+    "ID": "floor",
+    "color": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "density": 1.0,
+    "friction": 0.5,
+    "matpath": "resources/assets/materials/basic.json",
+    "meshname": "Skeleton",
+    "physics2D": 0,
+    "position": [
+        0.08564493805170059,
+        -5.011110782623291,
+        0.0
+    ],
+    "restitution": 0.5,
+    "restitutionThreshold": 1.0,
+    "rotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "size": [
+        24.34926986694336,
+        1.0,
+        1.0
+    ]
+}

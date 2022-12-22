@@ -1,8 +1,8 @@
 {
-    "entpath0": "resources/scenes/entities/guy3.json",
-    "entpath1": "resources/scenes/entities/camera.json",
-    "entpath2": "resources/scenes/entities/chris.json",
-    "entpath3": "resources/scenes/entities/guy1.json",
+    "entpath0": "resources/scenes/entities/guy1.json",
+    "entpath1": "resources/scenes/entities/chris.json",
+    "entpath2": "resources/scenes/entities/camera.json",
+    "entpath3": "resources/scenes/entities/guy3.json",
     "meshpath0": "resources/assets/meshes/skeleton.csv",
     "meshpath1": "resources/assets/meshes/textrSkeleton.csv",
     "numents": 4,

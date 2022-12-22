@@ -20,10 +20,15 @@ namespace machy {
                 
                 auto& pos = GetComponent<game::PositionComponent>();
 
-                if (input::keyboard::keyDown(MACHY_INPUT_KEY_W)) { pos.pos.y += 0.02f; }
-                if (input::keyboard::keyDown(MACHY_INPUT_KEY_A)) { pos.pos.x -= 0.02f; }
-                if (input::keyboard::keyDown(MACHY_INPUT_KEY_S)) { pos.pos.y -= 0.02f; }
-                if (input::keyboard::keyDown(MACHY_INPUT_KEY_D)) { pos.pos.x += 0.02f; }
+                if (input::keyboard::keyDown(MACHY_INPUT_KEY_A)) { pos.pos.x -= 0.2f; }
+                if (input::keyboard::keyDown(MACHY_INPUT_KEY_D)) { pos.pos.x += 0.2f; }
+                if (input::keyboard::keyDown(MACHY_INPUT_KEY_SPACE)) { pos.pos.y += 0.5f; }
+
+                if (HasComponent<game::PhysicsBody2DComponent>()) {
+                    auto& physics = GetComponent<game::PhysicsBody2DComponent>();
+
+                    physics.runtimePhysicsBody->SetTransform({ pos.pos.x , pos.pos.y } , pos.rotation.z);
+                } 
 
                 return;
             }

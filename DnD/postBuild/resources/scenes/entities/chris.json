@@ -1,0 +1,30 @@
+{
+    "ID": "chris",
+    "color": [
+        1.0,
+        0.0,
+        0.0
+    ],
+    "density": 1.0,
+    "friction": 1.0,
+    "matpath": "resources/assets/materials/basic.json",
+    "meshname": "Skeleton",
+    "physics2D": 2,
+    "position": [
+        4.524962425231934,
+        9.837563514709473,
+        0.0
+    ],
+    "restitution": 0.5,
+    "restitutionThreshold": 1.0,
+    "rotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "size": [
+        1.0,
+        1.0,
+        1.0
+    ]
+}

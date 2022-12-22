@@ -1,6 +1,7 @@
 #include "sceneSettings.hpp"
 
 #include "scripts/playerScript.hpp"
+#include "scripts/dieScript.hpp"
 
 #include "Core/fileSystem.hpp"
 
@@ -18,6 +19,7 @@
 
 static char buffer[512];
 static std::string basicMaterialPath = "resources/assets/materials/basic.json";
+static std::string basicCirclePath = "resources/assets/materials/circle.json";
 
 namespace machy {
 
@@ -127,15 +129,23 @@ namespace machy {
         if (selectionContext.HasComponent<game::NativeScript>()) {
             auto& script = selectionContext.GetComponent<game::NativeScript>();
 
-            if (script.bound)
-                ImGui::Text("Entity Binded to Script");
+            if (!script.bound) {
+
+                if (ImGui::Button("Bind to PlayerScript")) { script.Bind<PlayerScript>(); }
+                if (ImGui::Button("Bind to DieScript")) { script.Bind<DieScript>(); }
+
+            } else {
+
+                if (ImGui::Button("Unbind Script")) { script.Unbind(); }
+
+            }
         }
 
         if (selectionContext.HasComponent<game::PhysicsBody2DComponent>()) {
-            auto& phys = selectionContext.GetComponent<game::PhysicsBody2DComponent>();
+            auto& physics = selectionContext.GetComponent<game::PhysicsBody2DComponent>();
 
             const char* physTypeStr[3] = { "Static" , "Kinematic" , "Dynamic" };
-            const char* currPhysTypeStr = physTypeStr[(int)phys.type];
+            const char* currPhysTypeStr = physTypeStr[(int)physics.type];
 
             if (ImGui::BeginCombo("Physics Type" , currPhysTypeStr)) {
 
@@ -143,15 +153,18 @@ namespace machy {
                     bool selected = (currPhysTypeStr == physTypeStr[i]);
                     if (ImGui::Selectable(physTypeStr[i] , selected)) {
                         currPhysTypeStr = physTypeStr[i];
-                        phys.type = (game::PhysicsBody2DComponent::PhysicsType)i;
+                        physics.type = (game::PhysicsBody2DComponent::PhysicsType)i;
                     } 
                 }
 
                 ImGui::EndCombo();
             }
 
-            ImGui::Checkbox("Fix Rotation" , &phys.fixedRotation);
-
+            ImGui::DragFloat("Density" , &physics.density , 0.3f);
+            ImGui::DragFloat("Friction" , &physics.friction , 0.3f);
+            ImGui::DragFloat("Elasticity" , &physics.restitution , 0.3f);
+            ImGui::DragFloat("Force-Deadening" , &physics.restitutionThreshold , 0.3f);
+            ImGui::Checkbox("Fix Rotation" , &physics.fixedRotation);
         }
 
         return;
@@ -184,9 +197,6 @@ namespace machy {
 
             if (std::is_same_v<T , game::PhysicsBody2DComponent> && !selectionContext.HasComponent<game::PositionComponent>())
                 selectionContext.AddComponent<game::PositionComponent>();
-
-            if (std::is_same_v<T , game::NativeScript>)
-                selectionContext.GetComponent<game::NativeScript>().Bind<PlayerScript>();
                 
             ImGui::CloseCurrentPopup();
         }
@@ -199,6 +209,9 @@ namespace machy {
 
         if (!selectionContext.HasComponent<T>()) 
             return;
+
+        if (std::is_same_v<T , game::NativeScript>)
+            selectionContext.GetComponent<game::NativeScript>().Unbind();
 
         if (ImGui::MenuItem(entryname.c_str())) {
             selectionContext.RemoveComponent<T>();

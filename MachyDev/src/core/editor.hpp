@@ -3,6 +3,7 @@
 
 #include "gui/sceneSettings.hpp"
 
+#include "Graphics/material.hpp"
 #include "Graphics/camera.hpp"
 
 #include "ImGuizmo.h"
@@ -12,14 +13,17 @@ namespace machy {
     class GameEditor {
         EditorState state;
         SceneSettingGUI activeScene;
+
+        core::AssetLibrary<graphics::Material> availMaterials;
         
+        std::shared_ptr<game::Scene> editingScene;
         std::shared_ptr<game::Scene> context;
 
         // Ent To Hold Editor Camera
         std::shared_ptr<graphics::Camera> editorCam;
         glm::vec3 editorCamPos; 
         float editorCamRot;
-        bool renderingEditorCam;
+        bool renderingEditorCam , renderedEditorCam;
 
         ImGuizmo::OPERATION activeOp;
 

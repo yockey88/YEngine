@@ -24,12 +24,10 @@ workspace "MachineY"
     externals["boost"] = "external/boost"
     externals["imguizmo"] = "external/imguizmo"
     externals["box2d"] = "external/box2d"
-    externals["yphysx"] = "external/YPhysx"
 
     -- Glad before all
     include "external/glad"
     include "external/box2d"
-    include "external/YPhysx"
 
     --------------------
     -- Engine Library --
@@ -59,9 +57,7 @@ workspace "MachineY"
             "%{externals.imguizmo}/**.h",
             "%{externals.imguizmo}/**.cpp",
             "%{externals.box2d}/include/**.h",
-            "%{externals.box2d}/src/**.cpp",
-            "%{externals.yphysx}/include/**.hpp",
-            "%{externals.yphysx}/src/**.cpp"
+            "%{externals.box2d}/src/**.cpp"
         }
 
         externalincludedirs {
@@ -76,8 +72,7 @@ workspace "MachineY"
             "%{externals.ImEntt}",
             "%{externals.json}/include",
             "%{externals.imguizmo}",
-            "%{externals.box2d}/include",
-            "%{externals.yphysx}/include"
+            "%{externals.box2d}/include"
         }
 
         flags { "FatalWarnings" }
@@ -167,15 +162,111 @@ workspace "MachineY"
             "%{externals.ImEntt}",
             "%{externals.json}/include",
             "%{externals.imguizmo}",
-            "%{externals.box2d}/include",
-            "%{externals.yphysx}/include"
+            "%{externals.box2d}/include"
         }
 
         flags { "FatalWarnings" }
 
-        postbuildcommands {
-            "python3 " .. path.getabsolute("%{prj.name}") .. "/postBuild.py %{cfg.buildcfg}"
+        filter { "system:windows" , "configurations:*" }
+            systemversion "latest"
+            defines {
+                "MACHY_PLATFORM_WINDOWS",
+                "MACHY_GUI"
+            }
+
+            libdirs {
+                "%{externals.sdl2}/lib/x64"
+            }
+
+            links {
+                "Engine",
+                "SDL2",
+                "glad",
+                "box2d"
+            }
+
+        filter { "system:macosx" , "configurations:*" }
+            systemversion "latest"
+            xcodebuildsettings {
+                ["MACOSX_DEPLOYMENT_TARGET"] = "10.15",
+                ["UseModernBuildSystem"] = "NO"
+            }
+            defines {
+                "MACHY_PLATFORM_MAC"
+            }
+            links {
+                "Engine",
+                "SDL2.framework",
+                "glad",
+                "box2d"
+            }
+
+        filter { "system:linux" , "configurations:*" }
+            defines {
+                "MACHY_PLATFORM_LINUX"
+            }
+            links {
+                "Engine",
+                "SDL2",
+                "glad",
+                "box2d"
+            }
+
+        filter "configurations:Debug"
+            defines {
+                "MACHY_CONFIG_DEBUG"
+            }
+            runtime "Debug"
+            symbols "on"
+
+        filter "configurations:Release"
+            defines {
+                "MACHY_CONFIG_RELEASE"
+            }
+            runtime "Release"
+            symbols "off"
+            optimize "on"
+
+    ---------------------
+    -- DnD Development --
+    ---------------------
+    project "DnD"
+        location "DnD"
+        kind "ConsoleApp"
+        language "C++"
+        cppdialect "C++20"
+        staticruntime "on"
+        links "Engine"
+
+        targetdir(tdir)
+        objdir(odir)
+
+        files {
+            "%{prj.name}/src/**.cpp",
+            "%{prj.name}/src/**.hpp",
+            "gameScripts/*.hpp"
         }
+
+        externalincludedirs {
+            "%{prj.name}/src",
+            "%{prj.name}/gameScripts",
+            "Engine/include",
+            "%{externals.sdl2}/include",
+            "%{externals.glad}/include",
+            "%{externals.spdlog}/include",
+            "%{externals.entt}",
+            "%{externals.imgui}",
+            "%{externals.glm}",
+            "%{externals.stb}",
+            "%{externals.ImEntt}",
+            "%{externals.json}/include",
+            "%{externals.imguizmo}",
+            "%{externals.box2d}/include",
+            "DnD/gameScripts",
+            "DnD/gameObjects"
+        }
+
+        flags { "FatalWarnings" }
 
         filter { "system:windows" , "configurations:*" }
             systemversion "latest"

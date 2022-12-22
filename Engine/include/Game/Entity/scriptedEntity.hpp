@@ -24,6 +24,16 @@ namespace game {
             T& GetComponent() {
                 return entity.GetComponent<T>();
             }
+
+            template <typename T>
+            T& AddComponent() {
+                return entity.AddComponent<T>();
+            }
+
+            template <typename T>
+            bool HasComponent() {
+                return entity.HasComponent<T>();
+            }
     };
 
 }

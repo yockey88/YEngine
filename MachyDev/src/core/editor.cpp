@@ -2,6 +2,9 @@
 
 #include "machy.hpp"
 
+#include "scripts/cameraScript.hpp"
+#include "scripts/playerScript.hpp"
+
 #include "Core/fileSystem.hpp"
 #include "Math/math.hpp"
 
@@ -26,6 +29,7 @@
 static char buffer[512];
 static std::string scenePath = "resources/scenes";
 static std::string shaderPath = "resources/shaders";
+static std::string materialPath = "resources/assets/materials";
 static std::string characterSpritePath = "resources/sprites/characters";
 static std::string objectSpritePath = "resources/sprites/objects";
 static std::string tilesetPath = "resources/sprites/tilesets";
@@ -34,8 +38,11 @@ namespace machy {
 
     GameEditor::GameEditor() {
         activeOp = ImGuizmo::OPERATION::TRANSLATE;
-        renderingEditorCam = true;
+        renderingEditorCam = true; renderedEditorCam = false;
         editorCam = std::make_shared<graphics::Camera>();
+        editorCamPos = { 0.f , 0.f , 25.f };
+        editorCamRot = 0.f;
+        editingScene = std::shared_ptr<game::Scene>{ nullptr };
     }
 
     void GameEditor::renderControlPanel() {
@@ -43,12 +50,11 @@ namespace machy {
         if (ImGui::Begin("MainControls" , &show , ImGuiWindowFlags_MenuBar)) {
             
             if (ImGui::Button("Game View"))
-                if (context->Entts().view<game::CameraComponent>().size() >= 0) {
-                    renderingEditorCam = false;
-                    context->playScene();
-                    state.toggleWindow(Windows::Gui);
-                    MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
-                }
+                if (context->Entts().view<game::CameraComponent>().size() >= 0)
+                    if (state.isShowingGui()) {
+                        state.toggleWindow(Windows::Gui);
+                        MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
+                    }
 
             if (ImGui::Button("Play Scene")) {
                 if ((context->Entts().view<game::CameraComponent>().size() >= 0) && !context->isPlaying()) {
@@ -58,6 +64,8 @@ namespace machy {
                     MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
                 } else if (!context->isPlaying()) {
                     context->playScene();
+                    state.toggleWindow(Windows::Gui);
+                    MachY::Instance().getWindow().setRenderToScrn(!state.isShowingGui());
                 }
             }
             ImGui::SameLine();
@@ -65,7 +73,16 @@ namespace machy {
                 if (context->isPlaying()) {
                     renderingEditorCam = true;
                     context->pauseScene();
+                    context->viewWorld()->Dump();
                 }
+            }
+            {
+                ImGui::Text("Editor Camera Settings");
+                editorCamPos.z = editorCam->getHeight();
+                ImGui::DragFloat3("Editor Camera Pos" , glm::value_ptr(editorCamPos) , 0.02f);
+                ImGui::DragFloat("Camera Rotation" , &editorCamRot , 0.02f);
+                editorCam->setHeight(editorCamPos.z);
+                editorCam->setViewMat(editorCamPos , editorCamRot);
             }
 
             ImGuiWindowFlags flags = ImGuiWindowFlags_HorizontalScrollbar;
@@ -89,6 +106,17 @@ namespace machy {
                 if (selected) {
                     core::FileSystem::saveScene(context);
                     setSceneContext(core::FileSystem::loadScene(sceneSelectContext));
+
+                    context->pauseScene();
+                    renderingEditorCam = true;
+
+                    auto view = context->Entts().view<game::NativeScript>();
+                    for (auto ent : view) {
+
+                        game::Entity entity{ ent };
+                        entity.setContext(context.get());
+
+                    }
                 }
 
             }
@@ -154,7 +182,7 @@ namespace machy {
             ImVec4 col{ 0 , 1 , 0 , 1};
             ImGui::TextColored(col , "Asset Select");
 
-            if (ImGui::TreeNode("CharacterSprites")) {
+            if (ImGui::TreeNode("Blank Materials")) {
                 bool selected = false;
                 for (const auto entry : std::filesystem::directory_iterator(characterSpritePath)) {
                     if (!entry.is_directory()) {
@@ -177,56 +205,6 @@ namespace machy {
                         
                         }
 
-                    }
-                }
-
-                ImGui::TreePop();
-            }
-
-            if (ImGui::TreeNode("ObjectSprites")) {
-                bool selected = false;
-                for (const auto entry : std::filesystem::directory_iterator(objectSpritePath)) {
-                    if (!entry.is_directory()) {
-                        std::filesystem::path path = entry.path();
-                        path = path.make_preferred();
-                        std::string name = path.filename().string();
-                        if (path.extension().string() == ".png") {
-                            
-                            if (ImGui::Selectable(name.c_str() , &selected)) 
-                                assetSelectContext = path.string();
-                            
-                            if (ImGui::BeginDragDropSource()) {
-                                const wchar_t* itemPath = path.relative_path().c_str();
-                                assetSelectContext = path.string();
-                                ImGui::SetDragDropPayload("CHARACTER_SPRITE_DRAG_ITEM" , itemPath , (wcslen(itemPath) + 1) * sizeof(wchar_t) , ImGuiCond_Once);
-                                ImGui::EndDragDropSource();
-                            }
-                        }
-                    }
-                }
-
-                ImGui::TreePop();
-            }
-
-            if (ImGui::TreeNode("TileSets")) {
-                bool selected = false;
-                for (const auto entry : std::filesystem::directory_iterator(tilesetPath)) {
-                    if (!entry.is_directory()) {
-                        std::filesystem::path path = entry.path();
-                        path = path.make_preferred();
-                        std::string name = path.filename().string();
-                        if (path.extension().string() == ".png") {
-                            
-                            if (ImGui::Selectable(name.c_str() , &selected)) 
-                                assetSelectContext = path.string();
-
-                            if (ImGui::BeginDragDropSource()) {
-                                const wchar_t* itemPath = path.relative_path().c_str();
-                                assetSelectContext = path.string();
-                                ImGui::SetDragDropPayload("CHARACTER_SPRITE_DRAG_ITEM" , itemPath , (wcslen(itemPath) + 1) * sizeof(wchar_t) , ImGuiCond_Once);
-                                ImGui::EndDragDropSource();
-                            }
-                        }
                     }
                 }
 
@@ -284,7 +262,8 @@ namespace machy {
                         math::decompose(entModel , t , r , s);
 
                         glm::vec3 deltaRot = r - pos.rotation;
-                        pos.pos = t;
+                        pos.pos.x = t.x;
+                        pos.pos.y = t.y;
                         pos.rotation += deltaRot;
                         pos.size = s;
                     }
@@ -294,13 +273,6 @@ namespace machy {
                     auto& pos = selected.GetComponent<game::PositionComponent>();
                     entCam.cameraPos = pos.pos;
                     entCam.camera->setViewMat(entCam.cameraPos , entCam.cameraRotation);
-                }
-            }
-
-            if (ImGui::BeginDragDropTarget()) {
-                auto payload = ImGui::GetDragDropPayload();
-                if (payload != nullptr) {
-                    MACHY_INFO("Success");
                 }
             }
         }
@@ -313,9 +285,6 @@ namespace machy {
 		state.checkInputs(context);
         
         if (context->isPlaying()) {
-            /* TODO 
-                -> send ms/fram to editor console
-            */
             context->updateRuntime(dt);
         } else {
             context->updateFromEditor();
@@ -345,16 +314,20 @@ namespace machy {
 
     void GameEditor::RenderEditorCam() {
 
-        if (renderingEditorCam)
+        if (renderingEditorCam && !renderedEditorCam) {
             MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PushCamera , editorCam));
+            renderedEditorCam = true;
+        }
 
         return;
     }
 
     void GameEditor::FlushCams() {
         
-        if (renderingEditorCam)
+        if (renderingEditorCam || renderedEditorCam) {
             MachY::Instance().getRM().submit(MACHY_SUBMIT_RENDER_CMND(PopCamera));
+            renderedEditorCam = false;
+        }
 
         return;
     }

@@ -16,9 +16,9 @@
 // This header implements separate compilation features as described in
 // http://www.boost.org/more/separate_compilation.html
 
-#include <boost/config.hpp>
-#include <boost/system/api_config.hpp> // for BOOST_POSIX_API or BOOST_WINDOWS_API
-#include <boost/detail/workaround.hpp>
+#include <boost/filesystem/config.hpp>
+#include <system/api_config.hpp> // for BOOST_POSIX_API or BOOST_WINDOWS_API
+#include <detail/workaround.hpp>
 
 #if defined(BOOST_FILESYSTEM_VERSION) && BOOST_FILESYSTEM_VERSION != 3 && BOOST_FILESYSTEM_VERSION != 4
 #error Compiling Boost.Filesystem file with BOOST_FILESYSTEM_VERSION defined != 3 or 4

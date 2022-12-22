@@ -1,0 +1,30 @@
+{
+    "ID": "LWall",
+    "color": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "density": 1.0,
+    "friction": 0.5,
+    "matpath": "resources/assets/materials/basic.json",
+    "meshname": "Skeleton",
+    "physics2D": 0,
+    "position": [
+        -12.618328094482422,
+        -1.451389193534851,
+        0.0
+    ],
+    "restitution": 0.5,
+    "restitutionThreshold": 1.0,
+    "rotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "size": [
+        1.0,
+        8.120949745178223,
+        1.0
+    ]
+}

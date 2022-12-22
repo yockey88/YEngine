@@ -1,6 +1,7 @@
 #include "editorState.hpp"
 
 #include "machy.hpp"
+#include "Core/fileSystem.hpp"
 #include "Input/keyboard.hpp"
 
 namespace machy {
@@ -41,8 +42,11 @@ namespace machy {
 
         if (input::keyboard::keyDown(MACHY_INPUT_KEY_GRAVE) && !isShowingGui()) {
 
-            if (scene->isPlaying())
+            if (scene->isPlaying())  {
+                scene->viewWorld()->Dump();
                 scene->pauseScene();
+                
+            }
 
             toggleWindow(Windows::Gui);
             MachY::Instance().getWindow().setRenderToScrn(!isShowingGui());

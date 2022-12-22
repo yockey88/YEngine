@@ -36,64 +36,69 @@ namespace core {
         return hold;
     }
 
-    std::shared_ptr<graphics::VertexArray> FileSystem::loadVertexFile(const std::string& path) {
-
-        std::string line , hold = "" , meshName;
+    std::shared_ptr<graphics::VertexArray> FileSystem::createBasicMesh() {
 
         std::shared_ptr<graphics::VertexArray> VA = std::make_shared<graphics::VertexArray>();
+        VA->setName("Skeleton");
+
         MACHY_CREATE_VERTEX_BUFFER(vb , float);
+        vb->pushVertex({  0.5 ,  0.5 , 0.0 });
+        vb->pushVertex({  0.5 , -0.5 , 0.0 });
+        vb->pushVertex({ -0.5 , -0.5 , 0.0 });
+        vb->pushVertex({ -0.5 ,  0.5 , 0.0 });
+        vb->setLayout({ 3 });
 
-        std::ifstream file(path);
-        MACHY_ASSERT(file.is_open() , "Using nonexistent Vertex paths");
-
-        getline(file , line); // read name
-        meshName = line;
-        VA->setName(meshName);
-        VA->setPath(path);
-
-        getline(file , line); // read layout
-        std::vector<uint32_t> layout;
-        for (int i = 0; i < line.length(); i++) {
-            if (line[i] == ',') continue;
-            std::string str(1 , line[i]);
-            layout.push_back((uint32_t)std::stoi(str));
-        }
-        vb->setLayout(layout);
-
-        getline(file , line); // read elements
-        std::vector<uint32_t> elements;
-        for (int i = 0; i < line.length(); i++) {
-            if (line[i] == ',') continue;
-            std::string str(1 , line[i]);
-            elements.push_back((uint32_t)std::stoi(str));
-        }
-        VA->setElements(elements);
-        
-        std::vector<float> vertElts;
-        int lineNum = 0;
-        while (!file.eof()) {
-            getline(file , line);
-            vertElts.clear();
-            for (int i = 0; i < line.length(); i++) {
-                if (line[i] == ',') {
-                    vertElts.push_back(std::stof(hold));
-                    hold = "";
-                } else if (i == line.length()) {
-                    vertElts.push_back(std::stof(hold));
-                    hold = "";
-                } else if (line[i] == 'z') {
-                    vertElts.push_back(0.f);
-                    hold = "";
-                } else {
-                    hold += line[i];
-                }
-            }
-
-            vb->pushVertex(vertElts);  
-            
-            lineNum++;
-        }
+        VA->setElements({ 0 , 3 , 1 , 1 , 3 , 2 });
         VA->pushBuffer(std::move(vb));
+        VA->upload();
+
+        return VA;
+
+    }
+
+    std::shared_ptr<graphics::VertexArray> FileSystem::createTexturedMesh() {
+
+        std::shared_ptr<graphics::VertexArray> VA = std::make_shared<graphics::VertexArray>();
+        VA->setName("TexturedSkeleton");
+        
+        {
+            MACHY_CREATE_VERTEX_BUFFER(vb , float);
+            vb->pushVertex({  0.5 ,  0.5 , 0.0 });
+            vb->pushVertex({  0.5 , -0.5 , 0.0 });
+            vb->pushVertex({ -0.5 , -0.5 , 0.0 });
+            vb->pushVertex({ -0.5 ,  0.5 , 0.0 });
+            vb->setLayout({ 3 });
+            VA->pushBuffer(std::move(vb));
+        }
+        {
+            MACHY_CREATE_VERTEX_BUFFER(vb , short);
+            vb->pushVertex({ 1 , 1 });
+            vb->pushVertex({ 1 , 0 });
+            vb->pushVertex({ 0 , 0 });
+            vb->pushVertex({ 0 , 1 });
+            vb->setLayout({ 2 });
+            VA->pushBuffer(std::move(vb));
+        }
+        VA->setElements({ 0 , 3 , 1 , 1 , 3 , 2 });
+        VA->upload();
+
+        return VA;
+
+    }
+
+    std::shared_ptr<graphics::VertexArray> FileSystem::createTexturedMesh(const glm::vec4& uvsR , const glm::vec4& uvsL) {
+
+        std::shared_ptr<graphics::VertexArray> VA = std::make_shared<graphics::VertexArray>();
+        VA->setName("TexturedSkeleton");
+        
+        MACHY_CREATE_VERTEX_BUFFER(vb , float);
+        vb->pushVertex({  0.5 ,  0.5 , 0.0 , uvsR.x , uvsR.y });
+        vb->pushVertex({  0.5 , -0.5 , 0.0 , uvsR.z , uvsR.w });
+        vb->pushVertex({ -0.5 , -0.5 , 0.0 , uvsL.x , uvsL.y });
+        vb->pushVertex({ -0.5 ,  0.5 , 0.0 , uvsL.z , uvsL.w });
+        vb->setLayout({ 3 , 2 });
+        VA->pushBuffer(std::move(vb));
+        VA->setElements({ 0 , 3 , 1 , 1 , 3 , 2 });
         VA->upload();
 
         return VA;
@@ -110,6 +115,34 @@ namespace core {
         return shader;
     }
 
+    const std::shared_ptr<graphics::Material> FileSystem::loadTexturedMaterialFile(const std::string& path) {
+
+        std::string line , hold = "";
+
+        std::ifstream file(path);
+        MACHY_ASSERT(file.is_open() , "Using Non Existent Material Files");
+
+        std::map<std::string , std::string> paths;
+        SceneSerializer serializer;
+        std::string name = serializer.deserializeTexturedMat(paths , path);
+        MACHY_ASSERT(paths.size() > 0 , "Error Deserializing Material");
+
+        std::string vertP = paths["vert"];
+        std::string fragP = paths["frag"];
+        std::string  textrP = paths["texture"];
+
+        MACHY_ASSERT((vertP != "null" && fragP != "null") , "Cannot Have Null Shader Paths Into Material File");
+
+        std::shared_ptr<graphics::Shader> shader = loadShaderFile(vertP , fragP);
+        std::shared_ptr<graphics::Texture> text = std::make_shared<graphics::Texture>(textrP);
+        std::shared_ptr<graphics::Material> mat = std::make_shared<graphics::Material>(shader , text);    
+        mat->setName(name);
+        mat->setPath(path);
+
+        return mat;
+
+    }
+
     std::shared_ptr<graphics::Material> FileSystem::loadMaterialFile(const std::string& path) {
 
         std::string line , hold = "";
@@ -124,19 +157,13 @@ namespace core {
 
         std::string vertP = paths["vert"];
         std::string fragP = paths["frag"];
-        std::string textrP = paths["texture"];
 
         MACHY_ASSERT((vertP != "null" && fragP != "null") , "Cannot Have Null Shader Paths Into Material File");
 
         std::shared_ptr<graphics::Shader> shader = loadShaderFile(vertP , fragP);
 
         std::shared_ptr<graphics::Material> mat;
-        if (textrP != "null") {
-            std::shared_ptr<graphics::Texture> text = std::make_shared<graphics::Texture>(textrP);
-            mat = std::make_shared<graphics::Material>(shader);
-        } else {
-            mat = std::make_shared<graphics::Material>(shader);
-        }
+        mat = std::make_shared<graphics::Material>(shader);    
         mat->setName(name);
         mat->setPath(path);
 
@@ -145,7 +172,6 @@ namespace core {
 
     std::shared_ptr<game::Scene> FileSystem::loadScene(const std::string& path) {
 
-        MACHY_INFO("Loading Scene -> <{}>" , path);
         std::shared_ptr<game::Scene> ret = std::make_shared<game::Scene>();
         SceneSerializer serializer(ret);
         ret = serializer.deserialize(path);

@@ -1,22 +1,17 @@
 {
-    "ID": "chris",
+    "ID": "guy2",
     "color": [
-        1.0,
+        0.0,
         0.0,
         0.0
     ],
-    "density": 0.0,
-    "friction": 0.0,
     "matpath": "resources/assets/materials/basic.json",
     "meshname": "Skeleton",
-    "physics2D": 2,
     "position": [
-        -1.0172405242919922,
-        0.9191607236862183,
+        0.0,
+        0.0,
         0.0
     ],
-    "restitution": 0.0,
-    "restitutionThreshold": 0.0,
     "rotation": [
         0.0,
         0.0,

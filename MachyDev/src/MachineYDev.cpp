@@ -1,21 +1,16 @@
 #include "machy.hpp"
 #include "app.hpp"
 #include "main.hpp"
-#include "yworld.hpp"
 
 #include "core/editor.hpp"
 
-namespace machy {	
-
-	/// Callbacks
+namespace machy {
 	
 class Dev : public App {
 
 	GameEditor editor;
-
-	/* SEE BENEATH THE CLASS DECLARATION FOR HELPER FUNCTION DOCUMENTATION */
-	/* Initialization Helpers */
 	core::WindowProperties setWinProps();
+
 	public:
 		Dev() {}
 		Dev(const Dev&) = delete;
@@ -58,8 +53,8 @@ core::WindowProperties Dev::setWinProps() {
 	props.guiProps.isViewportEnabled = true;
 	props.guiProps.flags |= ImGuiWindowFlags_MenuBar;
 
-	props.w = 2050;
-	props.h = 1152;
+	props.w = 1300;
+	props.h = 720;
 
 	props.flags |= SDL_WINDOW_RESIZABLE;
 	props.title = "[Machine Y Development v{1.0.2}]";

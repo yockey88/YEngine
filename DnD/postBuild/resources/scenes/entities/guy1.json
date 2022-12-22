@@ -1,0 +1,25 @@
+{
+    "ID": "guy1",
+    "color": [
+        1.0,
+        0.9411764740943909,
+        0.0
+    ],
+    "matpath": "resources/assets/materials/circle.json",
+    "meshname": "Skeleton",
+    "position": [
+        -8.593920707702637,
+        9.472222328186035,
+        0.0
+    ],
+    "rotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "size": [
+        1.0,
+        1.0,
+        1.0
+    ]
+}

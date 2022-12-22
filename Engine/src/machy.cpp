@@ -102,7 +102,7 @@ namespace machy {
 		
 		timer.step();
 		window.flushEvents();
-		ActiveApp->Update(timer.getDelta());
+		ActiveApp->Update((1.f / 60.f));
 
 		return;
 	}

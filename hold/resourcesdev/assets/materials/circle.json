@@ -1,0 +1,8 @@
+{
+    "Matname": "circle",
+    "Matpath": "resources/assets/materials/circle.json",
+    "Shaders": [
+        "resources/assets/shaders/basic_camera_shader.vert",
+        "resources/assets/shaders/basic_circle.frag"
+    ]
+}

@@ -1,0 +1,9 @@
+{
+    "Matname": "basic",
+    "Matpath": "resources/assets/materials/basic.json",
+    "Shaders": [
+        "resources/assets/shaders/basic_camera_shader_texture.vert",
+        "resources/assets/shaders/basic_camera_shader_texture.frag"
+    ],
+    "Texture": "resources/assets/sprites/objects/dice1.png"
+}

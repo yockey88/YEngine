@@ -19,9 +19,13 @@ namespace core {
         static void getPiecesOfLine(std::vector<std::string>& pieces , const std::string& line);
         static std::string getFileAsOneStr(const std::string& path);
         public:
-            static std::shared_ptr<graphics::VertexArray> loadVertexFile(const std::string& path);
+            static std::shared_ptr<graphics::VertexArray> createBasicMesh();
+            static std::shared_ptr<graphics::VertexArray> createTexturedMesh();
+            static std::shared_ptr<graphics::VertexArray> createTexturedMesh(const glm::vec4& uvsR , const glm::vec4& uvsL);
+
             static const std::shared_ptr<graphics::Shader> loadShaderFile(const std::string& vpath , const std::string& fpath);
             static std::shared_ptr<graphics::Material> loadMaterialFile(const std::string& path);
+            static const std::shared_ptr<graphics::Material> loadTexturedMaterialFile(const std::string& path);
 
             static std::shared_ptr<game::Scene> loadScene(const std::string& path); 
             static void saveScene(std::shared_ptr<game::Scene> context);

@@ -1,0 +1,10 @@
+{
+    "entpath0": "resources/scenes/entities/die.json",
+    "entpath1": "resources/scenes/entities/dndcamera.json",
+    "entpath2": "resources/scenes/entities/floor.json",
+    "entpath3": "resources/scenes/entities/LWall.json",
+    "entpath4": "resources/scenes/entities/RWall.json",
+    "numents": 5,
+    "scene": "dnd",
+    "scenepath": "resources/scenes/dnd.json"
+}

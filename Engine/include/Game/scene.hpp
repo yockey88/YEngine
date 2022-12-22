@@ -58,6 +58,9 @@ namespace game {
             void pauseScene();
             void stopScene();
 
+            inline b2World* viewWorld() const { return world; }
+            inline b2World* getWorld() { return world; } 
+
             Entity createEnt(const std::string& name = "{BLANK ENTITY}");
             void destroyEntity(Entity& ent);
             Entity& getEntity(entt::entity handle);
@@ -68,6 +71,7 @@ namespace game {
             inline int getTotalEntsMade() const { return totalEntsCreated; }
 
             inline core::AssetLibrary<graphics::VertexArray>& getVertLib() { return Meshes; }
+
             inline std::string getName() const { return name; }
             inline std::string getPath() const { return path; }
 

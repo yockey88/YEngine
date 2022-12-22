@@ -1,4 +1,5 @@
 #include "Game/scene.hpp"
+#include "Core/callbacks.hpp"
 #include "Core/fileSystem.hpp"
 #include "Game/Entity/scriptedEntity.hpp"
 #include "Game/Entity/entityComponents.hpp"
@@ -24,8 +25,8 @@ namespace game {
 
         entities[0] = nullEnt;
 
-        std::shared_ptr<graphics::VertexArray> VA = core::FileSystem::loadVertexFile(sceneBaseMeshPath);
-        std::shared_ptr<graphics::VertexArray> tVA = core::FileSystem::loadVertexFile(sceneTexMeshPath);
+        std::shared_ptr<graphics::VertexArray> VA = core::FileSystem::createBasicMesh();
+        std::shared_ptr<graphics::VertexArray> tVA = core::FileSystem::createTexturedMesh();
         
         Meshes.load(VA->getName() , VA);
         Meshes.load(tVA->getName() , tVA);
@@ -58,31 +59,23 @@ namespace game {
 
     void Scene::updateRuntime(const float& dt) {
 
-        entRegistry.view<NativeScript>().each([=](auto entity , auto& script) {
-                if (script.instance == nullptr) {
-                    script.instance = script.BindScript();
-                    script.instance->entity = { entity };
-                    script.instance->entity.setContext(this);
-                    script.instance->onCreation();
-                }
-                script.instance->onUpdate();
-            });
-
-        entRegistry.view<CameraComponent , PositionComponent>().each([=](auto entity , auto& cam , auto& pos) {
-                pos.pos.x = cam.cameraPos.x;
-                pos.pos.y = cam.cameraPos.y;
-                pos.pos.z = cam.cameraPos.z;
-                pos.rotation.x = cam.cameraRotation;
-                cam.camera->setHeight(pos.pos.z);
-            });
-
-        const int velIter = 6;
-        const int posIter = 2;
+        const int velIter = 8;
+        const int posIter = 3;
         float timestep = (1.f / 60.f);
         world->Step(timestep , velIter , posIter);
 
-        auto view = entRegistry.view<PhysicsBody2DComponent>();
-        for (auto e : view) { 
+        auto scriptView = entRegistry.view<NativeScript>();
+        auto PhysicsView = entRegistry.view<PhysicsBody2DComponent>();
+
+        for (auto ent : scriptView) {
+
+            Entity entity{ ent };
+            entity.setContext(this);
+            entity.GetComponent<NativeScript>().instance->onUpdate();
+
+        }
+
+        for (auto e : PhysicsView) { 
             
             Entity ent{ e };
             ent.setContext(this);
@@ -92,11 +85,18 @@ namespace game {
 
             const auto& newPos = physics.runtimePhysicsBody->GetPosition();
 
-            pos.pos.x = newPos.x;
-            pos.pos.y = newPos.y;
-            pos.rotation.x = physics.runtimePhysicsBody->GetAngle();
+            pos.pos = { newPos.x , newPos.y , pos.pos.z };
+            pos.rotation.z = physics.runtimePhysicsBody->GetAngle();
 
         }
+
+        entRegistry.view<CameraComponent , PositionComponent>().each([=](auto entity , auto& cam , auto& pos) {
+                pos.pos.x = cam.cameraPos.x;
+                pos.pos.y = cam.cameraPos.y;
+                pos.pos.z = cam.cameraPos.z;
+                pos.rotation.x = cam.cameraRotation;
+                cam.camera->setHeight(pos.pos.z);
+            });
 
         return;
     }
@@ -160,6 +160,7 @@ namespace game {
             auto& physics = ent.GetComponent<PhysicsBody2DComponent>();
 
             physics.bodyDef.position.Set(pos.pos.x , pos.pos.y);
+            physics.bodyDef.angle = pos.rotation.z;
             physics.bodyDef.type = (b2BodyType)physics.type;
             physics.bodyDef.fixedRotation = physics.fixedRotation;
             physics.bodyDef.gravityScale = 1.f;
@@ -167,16 +168,24 @@ namespace game {
             physics.boundBox.SetAsBox((physics.size.x * pos.size.x) , (physics.size.y * pos.size.y));
 
             physics.fixtrDef.shape = & (physics.boundBox);
-            physics.fixtrDef.density = 1.f;
-            physics.fixtrDef.friction = 0.3f;
-            physics.fixtrDef.restitution = 0.3f;
-            physics.fixtrDef.restitutionThreshold = 3.f;
+            physics.fixtrDef.density = physics.density;
+            physics.fixtrDef.friction = physics.friction;
+            physics.fixtrDef.restitution = physics.restitution;
+            physics.fixtrDef.restitutionThreshold = physics.restitutionThreshold;
             
             physics.runtimePhysicsBody = world->CreateBody(&physics.bodyDef);
-            physics.runtimePhysicsBody->SetFixedRotation(physics.fixedRotation);
             physics.runtimeFixture = physics.runtimePhysicsBody->CreateFixture(&physics.fixtrDef);
 
         }
+
+        entRegistry.view<NativeScript>().each([=](auto entity , auto& script) {
+                if (script.instance == nullptr) {
+                    script.instance = script.BindScript();
+                    script.instance->entity = { entity };
+                    script.instance->entity.setContext(this);
+                    script.instance->onCreation();
+                }
+            });
 
         return;
     }
@@ -185,8 +194,10 @@ namespace game {
 
         playing = false;
 
-        delete world;
-        world = nullptr;
+        if (world != nullptr) {
+            delete world;
+            world = nullptr;
+        }
 
         auto view = entRegistry.view<PhysicsBody2DComponent>();
         for (auto e : view) {

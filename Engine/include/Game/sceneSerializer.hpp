@@ -25,16 +25,19 @@ namespace machy {
         void serializeEntSprite(game::Entity& entity , js& json);
         void serializeEntPhysics2DPos(game::Entity& entity , js& json);
         void serializeCamPos(game::Entity& entity , js& json);
+        void serializeNativeScript(game::Entity& entity , js& json);
 
         void deserializeEntPos(game::Entity& entity , js& json);
         void deserializeEntSprite(game::Entity& entity , js& json);
         void deserializeEntPhysics2D(game::Entity& entity , js& json);
         void deserializeCamPos(game::Entity& entity , js& json);
+        void deserializeNativeScript(game::Entity& entity , js& json);
         public:
             SceneSerializer() : context(nullptr) {}
             SceneSerializer(const std::shared_ptr<game::Scene>& context) : context(context) {}
 
             std::string deserializeMat(std::map<std::string , std::string>& paths , const std::string& path);
+            std::string deserializeTexturedMat(std::map<std::string , std::string>& paths , const std::string& path);
 
             void serialize(const std::string& filepath);
             void serializeEnt(game::Entity& entity);

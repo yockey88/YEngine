@@ -113,6 +113,8 @@ namespace machy::core {
 			fBufferHeight = h;
 		}
 
+		MACHY_INFO("Window FramebufferSize <{} , {}>" , fBufferWidth , fBufferHeight);
+
 		fBufferSize = { fBufferWidth , fBufferHeight };
 
 		return;

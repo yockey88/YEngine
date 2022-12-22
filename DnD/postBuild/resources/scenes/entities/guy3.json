@@ -1,0 +1,30 @@
+{
+    "ID": "guy3",
+    "color": [
+        0.7941174507141113,
+        0.0,
+        1.0
+    ],
+    "density": 0.0,
+    "friction": 0.0,
+    "matpath": "resources/assets/materials/basic.json",
+    "meshname": "Skeleton",
+    "physics2D": 0,
+    "position": [
+        0.2574801445007324,
+        -0.09583907574415207,
+        0.0
+    ],
+    "restitution": 0.0,
+    "restitutionThreshold": 0.0,
+    "rotation": [
+        0.0,
+        0.0,
+        0.0
+    ],
+    "size": [
+        19.837535858154297,
+        0.9999998807907104,
+        1.0
+    ]
+}

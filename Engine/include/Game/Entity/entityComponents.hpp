@@ -4,6 +4,7 @@
 #include "Game/Entity/scriptedEntity.hpp"
 
 #include "Graphics/vertex.hpp"
+#include "Graphics/texture.hpp"
 #include "Graphics/material.hpp"
 #include "Graphics/camera.hpp"
 #include "Graphics/sprite2D.hpp"
@@ -46,6 +47,19 @@ namespace game {
             : skeleton(skeleton) , material(material) , color(glm::vec3(0.f)) {}
     };
 
+    struct TexturedRenderComponent {
+        std::shared_ptr<graphics::VertexArray> skeleton;
+        std::shared_ptr<graphics::Material> material;
+        std::shared_ptr<graphics::Texture> texture;
+        glm::vec3 color;
+        std::string meshName , matName;
+
+        TexturedRenderComponent() = default;
+        TexturedRenderComponent(const TexturedRenderComponent&) = default;
+        TexturedRenderComponent(std::shared_ptr<graphics::VertexArray> skeleton , std::shared_ptr<graphics::Material> material , std::shared_ptr<graphics::Texture> texture) 
+            : skeleton(skeleton) , material(material) , texture(texture) , color(glm::vec3(0.f)) {}
+    };
+
     /// cameras
     struct CameraComponent {
         std::shared_ptr<graphics::Camera> camera;
@@ -74,8 +88,8 @@ namespace game {
         b2Body* runtimePhysicsBody;
         b2Fixture* runtimeFixture;
 
-        PhysicsBody2DComponent() : runtimePhysicsBody(nullptr) , runtimeFixture(nullptr) , type(PhysicsType::Dynamic) ,
-                                    fixedRotation(true) , density(0.f) , friction(0.f) , restitution(0.f) , restitutionThreshold(0.f) ,
+        PhysicsBody2DComponent() : runtimePhysicsBody(nullptr) , runtimeFixture(nullptr) , type(PhysicsType::Static) ,
+                                    fixedRotation(false) , density(1.f) , friction(0.5f) , restitution(0.5f) , restitutionThreshold(1.f) ,
                                     offset({ 0.f , 0.f }) , size({ 0.5f , 0.5f }) {}
         PhysicsBody2DComponent(const PhysicsBody2DComponent&) = default;
         ~PhysicsBody2DComponent() {}
@@ -90,7 +104,7 @@ namespace game {
         void (*DestroyScript)(NativeScript*);
         
         NativeScript() : instance(nullptr) , bound(false) {}
-        ~NativeScript() { DestroyScript(this); }
+        ~NativeScript() {  }
 
         template <typename T>
         void Bind() {
@@ -98,6 +112,16 @@ namespace game {
             DestroyScript = [](NativeScript* script) { delete script->instance; script->instance = nullptr; };
 
             bound = true;
+        }
+
+        void Unbind() {
+            delete instance;
+            instance = nullptr;
+
+            BindScript = nullptr;
+            DestroyScript = nullptr;
+
+            bound = false;
         }
     };
 

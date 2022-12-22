@@ -1,0 +1,7 @@
+{
+    "entpath0": "resources/scenes/entities/cam2.json",
+    "entpath1": "resources/scenes/entities/guy2.json",
+    "numents": 2,
+    "scene": "testing",
+    "scenepath": "resources/scenes/testing.json"
+}
